@@ -1,0 +1,68 @@
+#app {
+  height: 100%;
+}
+
+.CodeMirror{
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 8px 4px 4px 8px;
+  border: 1px solid #C2C2C1;
+  margin-bottom: 30px;
+}
+.CodeMirror-scroll {
+  flex: 1;
+  height: auto;
+}
+#parsed-output {
+  background: #002B37;
+  color: #839496;
+  padding: 10px;
+  width: 100%;
+
+}
+.parse-output .parse-tag {
+  display: inline-block;
+  margin: 0 6px 6px 6px;
+  padding: 8px 0px 8px 6px;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.parse-output .parse-tag:hover {
+  border-bottom: 1px solid rgba(255,255,255,0.42);
+}
+.parse-output span {
+  display: inline-block;
+  padding: 0 6px 0 0
+}
+.parse-output .tag-name {
+  display: inline-block;
+  color: white;
+}
+.parse-output > .parse-tag > .parse-tag {display: block}
+
+
+.re-v-split-splitter, .rc-h-split-splitter {
+  flex: 0 0 14px !important;
+}
+.re-v-split-splitter:hover div, .rc-h-split-splitter:hover div {
+  background: rgba(0,0,0,1) !important;
+}
+.re-v-split-splitter:hover, .rc-h-split-splitter:hover {
+  background: transparent !important;
+}
+.rc-h-split-splitter > div {
+  height: 40px !important;
+  width: 6px !important;
+  margin-left: 4px !important;
+  background: rgba(0,0,0,0.3);
+}
+.re-v-split-splitter > div  {
+  width: 40px !important;
+  background: rgba(0,0,0,0.3);
+    height: 6px !important;
+    margin-top: 4px !important;
+}
+.re-v-split-splitter > div > div, .rc-h-split-splitter > div > div {
+  display: none;
+}
