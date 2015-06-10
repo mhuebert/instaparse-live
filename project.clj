@@ -9,11 +9,13 @@
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [com.lucasbradstreet/instaparse-cljs "1.3.5"]
                  #_[kibu/pushy "0.3.1"]
-                 #_[secretary "1.2.3"]
+                 [secretary "1.2.3"]
                  [cljsjs/codemirror "5.1.0-2"]
                  [reagent "0.5.0"]
                  [re-com "0.5.4"]
-                 ]
+                 [cljsjs/firebase "2.2.3-0"]
+                 [matchbox "0.0.6"]]
+
 
   :plugins [[lein-cljsbuild "1.0.5"]
             [lein-figwheel "0.3.1"]]

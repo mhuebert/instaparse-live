@@ -57,12 +57,17 @@
      {
       :component-did-mount    #(let [node (.getDOMNode %)
                                      config (clj->js (merge cm-defaults options))
-                                     editor (.fromTextArea js/CodeMirror node config)]
+                                     editor (.fromTextArea js/CodeMirror node config)
+                                     val (or @a "")]
                                 (r/set-state % {:editor editor})
-                                (.setValue editor @a)
+                                (.setValue editor val)
+                                (add-watch a nil (fn [key reference old-state new-state]
+                                                   (if (not= new-state (.getValue editor))
+                                                     (.setValue editor new-state))))
                                 (.on editor "change" (fn [_]
-                                                       (let [value (.getValue js/editor)]
-                                                         (reset! a value)))))
+                                                       (let [value (.getValue editor)]
+                                                         (reset! a value))))
+)
 
       :component-will-unmount #(.off (:editor (r/state %)) "change")
 
@@ -71,3 +76,15 @@
       :reagent-render         (fn []
                                 [:textarea {:style {:width "100%" :height "100%" :display "flex" :background "red" :flex 1}}])
       })))
+
+(def default-grammar "
+<S> = (sexp | whitespace)+
+sexp = <'('> operation <')'>
+
+<operation> = operator + args
+operator = #'[+*-\\\\]'
+args = (num | <whitespace> | sexp)+
+<num> = #'[0-9]+'
+<whitespace> = #'\\s+'")
+
+(def default-sample-code "(+ 1 (- 3 1))")
