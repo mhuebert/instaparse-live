@@ -17,27 +17,54 @@
 #parsed-output {
   background: #002B37;
   color: #839496;
-  padding: 10px;
   width: 100%;
-
 }
+
 .parse-output .parse-tag {
   display: inline-block;
   margin: 0 6px 6px 6px;
-  padding: 8px 0px 8px 6px;
+  padding: 6px 0px 0px 6px;
   background: rgba(255,255,255,0.04);
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
+.parse-output > .parse-tag {
+  margin-top: 6px;
+  background: transparent;
+  border-bottom: none !important;
+}
+.parse-sep {
+  border-bottom: 4px solid rgba(255,255,255,0.08)
+}
+.parse-output > .parse-tag:first-child {
+  border-top: none;
+}
+.show-brackets .parse-tag:before {
+  content: "[";
+  }
+.show-brackets .parse-tag:after {
+  content: "]";
+  }
+.show-brackets .parse-tag:before, .show-brackets .parse-tag:after {
+  display: inline-block;
+  padding-right: 6px;
+}
+.parse-output > .parse-tag > .tag-name {
+  display: block;
+  margin: 0 0 8px 0;
+}
+
 .parse-output .parse-tag:hover {
   border-bottom: 1px solid rgba(255,255,255,0.42);
 }
 .parse-output span {
   display: inline-block;
-  padding: 0 6px 0 0
+  padding-right: 6px;
+  margin-bottom 6px;
 }
 .parse-output .tag-name {
   display: inline-block;
   color: white;
+  margin-bottom: 6px;
 }
 .parse-output > .parse-tag > .parse-tag {display: block}
 
