@@ -1,9 +1,9 @@
 (ns app.util
-  (:require [clojure.string :as str]
+  (:require [instaparse.core :as insta]
+            [re-com.core   :refer [h-box v-box box gap line scroller border h-split v-split title flex-child-style p]]
             [clojure.walk :refer [postwalk]]
-            [instaparse.core :as insta]
             [reagent.core :as r]
-            [re-com.core   :refer [h-box v-box box gap line scroller border h-split v-split title flex-child-style p]]))
+            ))
 
 (enable-console-print!)
 
