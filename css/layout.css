@@ -2,14 +2,33 @@
   height: 100%;
 }
 
+#header {
+  background: #F4F4F4;
+  font-size: 11px;
+  font-family: "Helvetica Neue";
+  color: #35AADB;
+  //height: 24px;
+  box-sizing: border-box;
+  padding: 6px 8px;
+}
+.right {float: right;}
+.left {float: left;}
+
+#header .right a {
+  color: #C41A6E ;
+  margin-left: 10px;
+  font-weight: 500;
+}
+
 .CodeMirror{
   display: flex;
   flex-direction: column;
   flex: 1;
   padding: 8px 4px 4px 8px;
-  border: 1px solid #C2C2C1;
-  margin-bottom: 30px;
+  //border: 1px solid #C2C2C1;
+
 }
+
 .CodeMirror-scroll {
   flex: 1;
   height: auto;
