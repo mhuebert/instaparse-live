@@ -1,44 +1,40 @@
 (ns app.util
   (:require [instaparse.core :as insta]
             [re-com.core   :refer [h-box v-box box gap line scroller border h-split v-split title flex-child-style p]]
-
             [clojure.walk :refer [postwalk]]
             [reagent.core :as r]
             ))
 
 (enable-console-print!)
 
+(defn error-message
+  [error-msg]
+  [:div {:style {:padding 10
+                 :color "#D53182"
+                 :font-family "monospace"
+                 :white-space "pre-wrap"}}
+   error-msg])
 
 (defn parse [rules sample]
   (try
     (let [parser (insta/parser rules)
-          result (insta/parses parser sample)
+          result (take 20 (insta/parses parser sample))
           failure? (insta/failure? result)]
       (if failure?
-        (let [result (into {} (insta/get-failure result))]
-          (if (string? result) result
-                               (vec (concat
-                                      [:div {:class "parse-failure"}]
-                                      [[:div
-                                        [:strong "Line "] (:line result)
-                                        [:strong ", index "] (:index result)
-                                        [:strong ", column "] (:column result)
-                                        ]
-                                       [:div {:style {:marginLeft 10}} (map (fn [reason]
-                                                                              (let [tag (name (:tag reason))
-                                                                                    expected (with-out-str (prn (:expecting reason)))]
-                                                                                [:div [:strong tag] " expected " expected])) (:reason result))]
-                                       [:div [:strong "Text: "] (:text result)]]))))
+        (let [result (insta/get-failure result)]
+          (error-message (pr-str result)))
         (let [result (postwalk
                        (fn [x]
+                         (prn x)
                          (if (vector? x) [:div {:class (str "parse-tag " (name (first x)))}
-                                          [:span #_"[" [:span {:class "tag-name"} (str (first x) " ")]] (rest x) #_"]"] x))
+                                          [:span {:class "tag-name"} (str (first x) " ")] (rest x) ]
+                                         x))
                        result)]
-          (if (empty? result) "No match" [:div {:class "parse-output"} result]))))
+          (if (empty? result) (error-message "No match") [:div {:class "parse-output"} (interpose [:div {:class "parse-sep"}] result)]))))
     (catch :default e
       (do
         (prn "Caught error:" e)
-        [:div {:style {:padding 5}} (str e)]))))
+        (error-message e)))))
 
 (def cm-defaults {
                   :lineNumbers false

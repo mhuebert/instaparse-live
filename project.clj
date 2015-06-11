@@ -7,7 +7,7 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojurescript "0.0-3211"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
-                 [com.lucasbradstreet/instaparse-cljs "1.3.5"]
+                 [com.lucasbradstreet/instaparse-cljs "1.3.5.1"]
                  #_[kibu/pushy "0.3.1"]
                  [secretary "1.2.3"]
                  [cljsjs/codemirror "5.1.0-2"]
