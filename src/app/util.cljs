@@ -24,9 +24,21 @@
                  result)]
     [:div {:class "parse-output"} (interpose [:div {:class "parse-sep"}] result)]))
 
-(defn parse [rules sample]
+
+(defn memoize-last-val [f]
+  (let [last-args (atom {})
+        last-val (atom {})]
+    (fn [& args]
+        (if (= @last-args args) @last-val
+                                (do (reset! last-args args)
+                                    (reset! last-val (apply f args))
+                                    @last-val)))))
+
+(defonce memoized-parser (memoize-last-val insta/parser))
+
+(defn parse [grammar sample]
   (try
-    (let [parser (insta/parser rules)
+    (let [parser (memoized-parser grammar)
           result (insta/parses parser sample)
           failure (if (insta/failure? result) (insta/get-failure result) nil)]
       (if failure

@@ -1,6 +1,7 @@
 (ns ^:figwheel-always app.core
     (:require
         [cljsjs.codemirror]
+        [instaparse.core :as insta]
         [app.util :as util]
         [reagent.core :as r]
         #_[secretary.core :as secretary :refer-macros [defroute]]
@@ -11,7 +12,7 @@
 
 (enable-console-print!)
 
-(defonce editor-content (r/atom "
+(defonce grammar (r/atom "
 <S> = (sexp | whitespace)+
 sexp = <'('> operation <')'>
 
@@ -20,13 +21,14 @@ operator = #'[+*-\\\\]'
 args = (num | <whitespace> | sexp)+
 <num> = #'[0-9]+'
 <whitespace> = #'\\s+'"))
-(defonce sample-code (r/atom "(+ 1 (- 3 1))"))
+
+(defonce sample (r/atom "(+ 1 (- 3 1))"))
 
 (defn parsed-output []
   [:div
    {:id "parsed-output"
     :style {:overflow-y "auto"}}
-   (util/parse @editor-content @sample-code)])
+   (util/parse @grammar @sample)])
 
  (defn app []
    [h-split
@@ -43,12 +45,12 @@ args = (num | <whitespace> | sexp)+
                                     {:style {:marginBottom 10 :textAlign "center"}}
                                     "Build a parser in your browser! This page runs the " [:a {:href "https://github.com/lbradstreet/instaparse-cljs"} "ClojureScript port"]
                                     " of " [:a {:href "https://github.com/Engelberg/instaparse"} "Instaparse"] "."]
-                                   [util/cm-editor sample-code {:theme "solarized light"}]]]
+                                   [util/cm-editor sample {:theme "solarized light"}]]]
               :panel-2 [parsed-output]
      ]
     :panel-2 [v-box
               :size "1"
-              :children [[util/cm-editor editor-content]]]
+              :children [[util/cm-editor grammar]]]
     ])
 
 (defn init []
