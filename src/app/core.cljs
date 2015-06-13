@@ -175,6 +175,7 @@
                 ]]])
 
 
+
 ; Bind Reagent component to DOM
 (defn init []
   (r/render-component [app] (.getElementById js/document "app")))

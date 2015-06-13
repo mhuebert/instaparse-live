@@ -15,25 +15,37 @@
                  :white-space "pre-wrap"}}
    error-msg])
 
-(defn parse [rules sample]
+(defn visualize-result [result]
+  (let [result (postwalk
+                 (fn [x]
+                   (if (vector? x) [:div {:class (str "parse-tag " (name (first x)))}
+                                    [:span {:class "tag-name"} (str (first x) " ")] (rest x)]
+                                   x))
+                 result)]
+    [:div {:class "parse-output"} (interpose [:div {:class "parse-sep"}] result)]))
+
+
+(defn memoize-last-val [f]
+  (let [last-args (atom {})
+        last-val (atom {})]
+    (fn [& args]
+        (if (= @last-args args) @last-val
+                                (do (reset! last-args args)
+                                    (reset! last-val (apply f args))
+                                    @last-val)))))
+
+(defonce memoized-parser (memoize-last-val insta/parser))
+
+(defn parse [grammar sample]
   (try
-    (let [parser (insta/parser rules)
-          result (take 20 (insta/parses parser sample))
-          failure? (insta/failure? result)]
-      (if failure?
-        (let [result (insta/get-failure result)]
-          (error-message (pr-str result)))
-        (let [result (postwalk
-                       (fn [x]
-                         (prn x)
-                         (if (vector? x) [:div {:class (str "parse-tag " (name (first x)))}
-                                          [:span {:class "tag-name"} (str (first x) " ")] (rest x) ]
-                                         x))
-                       result)]
-          (if (empty? result) (error-message "No match") [:div {:class "parse-output"} (interpose [:div {:class "parse-sep"}] result)]))))
+    (let [parser (memoized-parser grammar)
+          result (insta/parses parser sample)
+          failure (if (insta/failure? result) (insta/get-failure result) nil)]
+      (if failure
+        (error-message (pr-str failure))
+        (visualize-result (take 20 result))))
     (catch :default e
       (do
-        (prn "Caught error:" e)
         (error-message e)))))
 
 (def cm-defaults {
