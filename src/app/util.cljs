@@ -47,15 +47,15 @@
                         (apply concat [grammar] (seq (select-keys options [:input-format :output-format :string-ci]))))
           result (apply insta/parses
                         (apply concat [parser sample] (seq (select-keys options [:start :partial :total :unhide :trace]))))
-          ;parser (memoized-parser grammar)
-          ;result (insta/parses parser sample )
           failure (if (insta/failure? result) (insta/get-failure result) nil)
           output-format (:output-format options)]
 
-      (cond failure (string-result (pr-str failure) :error true)
-            (contains? [:hiccup :enlive] output-format) (string-result (str result))
-            (= output-format :raw) (string-result result)
-            :else (visualized-result (take (or (:max-parses options) 20) result)))
+      (binding [*print-readably* false]
+        (cond failure (string-result (pr-str failure) :error true)
+              (= output-format :hiccup) (string-result (postwalk (fn [x] (with-out-str (pr x))) result))
+              (= output-format :enlive) (string-result (str "Not sure how to print :enlive yet.\n\n" (apply str result)))
+              (= output-format :raw) (string-result result)
+              :else (visualized-result (take (or (:max-parses options) 20) result))))
       )
     (catch :default e
       (do
