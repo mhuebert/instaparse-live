@@ -1,6 +1,7 @@
 (ns ^:figwheel-always app.core
   (:require
     [cljsjs.codemirror]
+    [cljsjs.codemirror.mode.clojure]
     [app.util :as util]
     [app.nav :as nav]
     [app.state :as state :refer [user location]]
@@ -44,15 +45,14 @@
    (util/parse @state/grammar @state/sample @state/options)])
 
 (defn options []
-  [:div
-   {:style
-    {:position "absolute" :z-index 10 :bottom 0 :background "#002b36" :width "100%" :border-top "4px solid rgba(255,255,255,0.08)" :padding 10 :box-sizing "border-box"}}
+  [:div {:class "options"}
    [:div
     {:class "button"
      :style {:text-align "center"}
      :on-click (fn [] (prn "here" @state/ui) (swap! state/ui merge {:show-options (not (:show-options @state/ui))}))}
     "Options"]
-   (if (= true (:show-options @state/ui)) [:div [util/cm-editor state/options {:mode "clojure"}]])])
+   (if (= true (:show-options @state/ui)) [:div [util/cm-editor state/options {:mode "clojure" :style "background:white"}]
+                                           ])])
 
 ; The main app component
 (defn app []
