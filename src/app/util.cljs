@@ -3,6 +3,7 @@
             [re-com.core   :refer [h-box v-box box gap line scroller border h-split v-split title flex-child-style p]]
             [clojure.walk :refer [postwalk]]
             [reagent.core :as r]
+            [fipp.edn :refer [pprint]]
             [cljs.reader :refer [read-string]]
             ))
 
@@ -10,7 +11,6 @@
 
 (defn string-result
   [result & {:keys [error]}]
-  (prn error)
   [:div {:style {:padding     10
                  :color       (if error "#D53182" "inherit")
                  :font-family "monospace"
@@ -42,27 +42,18 @@
 (defn parse [grammar sample options]
   (try
     (let [options (read-string options)
-          _ (prn options)
           parser (apply memoized-parser
                         (apply concat [grammar] (seq (select-keys options [:input-format :output-format :string-ci]))))
           result (apply insta/parses
                         (apply concat [parser sample] (seq (select-keys options [:start :partial :total :unhide :trace]))))
           failure (if (insta/failure? result) (insta/get-failure result) nil)
           output-format (:output-format options)]
-
-      (binding [*print-readably* false]
-        (cond failure (string-result (pr-str failure) :error true)
-              (= output-format :hiccup) (string-result (postwalk (fn [x] (with-out-str (pr x))) result))
-              (= output-format :enlive) (string-result (str "Not sure how to print :enlive yet.\n\n" (apply str result)))
-              (= output-format :raw) (string-result result)
-              :else (visualized-result (take (or (:max-parses options) 20) result))))
-      )
+      (cond failure (string-result (pr-str failure) :error true)
+            (output-format #{:hiccup :enlive}) (string-result (with-out-str (pprint result)))
+            :else (visualized-result (take (or (:max-parses options) 20) result))))
     (catch :default e
-      (do
-        (prn e (string? e))
-        (string-result
-          (if (string? e) e
-                          (str e "\n\n===\n(likely a problem w/ options map)")))))))
+      (let [message (if (string? e) e (str "Options Map " e))]
+        (string-result message :error true)))))
 
 (def cm-defaults {
                   :lineNumbers false
