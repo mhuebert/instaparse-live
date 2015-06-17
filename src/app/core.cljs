@@ -25,16 +25,18 @@
 ; Sub-components
 
 (defn header []
+
   [:div
    {:id "header"}
    [:span {:class "left"}
     [:a {:class "button" :href "#/new"} "New"]
     [:a {:class "button" :on-click db/save-new} "Fork"]
-    [:strong "User: "] (if (:uid @user) (str (:uid @user) " ") "Signing in...")
-    [:strong " Doc: "] [:a {:href (str "#/" (:doc-id @location))} (str (:doc-id @location))]
-    [:strong " Version: "] [:a {:href (str "#/" (:doc-id @location) "/" (:version-id @location))} (.substr (str (:version-id @location)) 1)]
+
+    [:span {:class (if-not (:doc-id @location) "hidden")}
+     [:strong [:a {:href (str "#/" (:doc-id @location) "/" (:version-id @location))} "Link"]]]
     ]
    [:span {:class "right"}
+    (cond (= "anonymous" (:provider @user)) "Anonymous" (= {} @user) "Signing in" :else (:uid @user))
     [:a {:class "button" :on-click db/save :title "CMD-s"} "Save"]
     ]])
 
