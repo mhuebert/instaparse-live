@@ -1,11 +1,12 @@
 (ns app.state
   (:require [reagent.core :as r]
-            [app.util :as util])
-  )
+            [app.data :as data]))
 
-(defonce options (r/atom util/default-options))
-(defonce grammar (r/atom util/default-grammar))
-(defonce sample (r/atom util/default-sample-code))
+(defonce editors (atom (sorted-map)))
+(defonce editor-focus (atom nil))
+(defonce options (r/atom data/default-options))
+(defonce grammar (r/atom data/default-grammar))
+(defonce sample (r/atom data/default-sample-code))
 (defonce user (r/atom {}))
 (defonce location (r/atom {}))
 (defonce ui (r/atom {:show-options false}))

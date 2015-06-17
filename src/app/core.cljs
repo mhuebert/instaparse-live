@@ -49,9 +49,9 @@
 (defn options []
   [:div {:class "options"}
    [:div
-    {:class "button"
-     :style {:text-align "center"}
-     :on-click (fn [] (prn "here" @state/ui) (swap! state/ui merge {:show-options (not (:show-options @state/ui))}))}
+    {:class    "button"
+     :style    {:text-align "center"}
+     :on-click nav/toggle-options}
     "Options"]
    (if (= true (:show-options @state/ui)) [:div [util/cm-editor state/options {:mode "clojure" :style "background:white"}]
                                            ])])

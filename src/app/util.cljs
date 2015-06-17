@@ -5,7 +5,7 @@
             [reagent.core :as r]
             [fipp.edn :refer [pprint]]
             [cljs.reader :refer [read-string]]
-            ))
+            [app.state :as state]))
 
 (enable-console-print!)
 
@@ -47,10 +47,11 @@
           result (apply insta/parses
                         (apply concat [parser sample] (seq (select-keys options [:start :partial :total :unhide :trace]))))
           failure (if (insta/failure? result) (insta/get-failure result) nil)
-          output-format (:output-format options)]
+          output-format (:output-format options)
+          max-parses (or (:max-parses options) 20)]
       (cond failure (string-result (pr-str failure) :error true)
-            (output-format #{:hiccup :enlive}) (string-result (with-out-str (pprint result)))
-            :else (visualized-result (take (or (:max-parses options) 20) result))))
+            (contains? [:hiccup :enlive] output-format) (string-result (with-out-str (pprint result)))
+            :else (visualized-result (take max-parses result))))
     (catch :default e
       (let [message (if (string? e) e (str "Options Map " e))]
         (string-result message :error true)))))
@@ -73,8 +74,10 @@
       :component-did-mount    #(let [node (.getDOMNode %)
                                      config (clj->js (merge cm-defaults options))
                                      editor (.fromTextArea js/CodeMirror node config)
-                                     val (or @a "")]
-                                (r/set-state % {:editor editor})
+                                     val (or @a "")
+                                     id (or (:name options) (.now js/Date))]
+                                (swap! state/editors merge {id editor})
+                                (r/set-state % {:editor editor :id id})
                                 (.setValue editor val)
                                 (add-watch a nil (fn [_ _ _ new-state]
                                                    (if (not= new-state (.getValue editor))
@@ -82,44 +85,15 @@
                                 (.on editor "change" (fn [_]
                                                        (let [value (.getValue editor)]
                                                          (reset! a value))))
-                                )
+                                (.on editor "focus" (fn [_] (reset! state/editor-focus id))))
 
-      :component-will-unmount #(.off (:editor (r/state %)) "change")
+      :component-will-unmount (fn [x]
+                                (let [{:keys [id editor]} (r/state x)]
+                                  (swap! state/editors dissoc id)
+                                  (.off editor)))
 
 
       :display-name           "CodeMirror Component"
       :reagent-render         (fn []
                                 [:textarea {:style {:width "100%" :height "100%" :display "flex" :background "red" :flex 1}}])
       })))
-
-(def default-grammar "
-<S> = (sexp | whitespace)+
-sexp = <'('> operation <')'>
-
-<operation> = operator + args
-operator = #'[+*-\\\\]'
-args = (num | <whitespace> | sexp)+
-<num> = #'[0-9]+'
-<whitespace> = #'\\s+'")
-
-(def default-sample-code "(+ 1 (- 3 1))")
-
-(def default-options "{
-  :max-parses 20
-  ; :string-ci true
-  ; :partial false
-  ; :total false
-  ; :input-format  ; [:ebnf, :abnf]
-  ; :output-format ; [:hiccup, :enlive]
-  ; :unhide ; [:content, :tags, :all]
-  ; :start  ; <:rule-name>
-}")
-
-(def blank-grammar "Sentence = (word | comma | <space>)+ end
-
-word = #'\\w+'
-comma = ','
-space = #'\\s'
-end = '.' | '?' | '!' ")
-
-(def blank-sample "Hello, world!")

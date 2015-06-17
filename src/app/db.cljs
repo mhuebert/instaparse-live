@@ -2,17 +2,14 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [matchbox.core :as m]
             [matchbox.async :as ma]
-            [cljs.core.async :as async :refer [<! put! chan]]
+            [cljs.core.async :refer [<! put! chan]]
             [cljsjs.firebase :as F]
-            [goog.events :as events]
+            [goog.events]
             [reagent.core :as r]
-            [app.state :as state :refer [grammar sample location user options]])
+            [app.state :refer [grammar sample location user options]])
   (:import goog.History))
 
 
-; Save -> push the two atoms into the current doc's versions
-;         - set current :uid into doc if it's a new doc
-;         - only allow edits to user-owned doc
 ; If anon-user - save anon-user ID in atom
 ; Fork -> push the two atoms into a new doc's versions
 ; Load -> grab a doc from Firebase and reset! atoms
@@ -34,7 +31,6 @@
    :options @options})
 
 (defn load-state [version loc]
-  (prn "load-state" loc)
   (reset! location {:doc-id (:doc-id loc) :version-id (:version-id loc)})
   (reset! grammar (:grammar version))
   (reset! sample (:sample version))
@@ -50,6 +46,9 @@
 (defn sign-in-anon []
   (if-not (.getAuth ref) (.authAnonymously ref #())))
 
+(defn sign-in-github []
+  )
+
 (defn signed-in? []
   (if (:uid @user) true false))
 
@@ -62,7 +61,6 @@
     id-chan))
 
 (defn save-new []
-  (prn "save-new")
   (go
     (let [doc-ref (.push ref)]
       (<! (ma/reset!< doc-ref {:owner (:uid @user) :parent (:doc-id @location)}))
@@ -74,7 +72,6 @@
                           :version-id (.key version-ref)})))))
 
 (defn save-version []
-  (prn "save-version")
   (go
     (let [doc-id (:doc-id @location)
           doc-ref (-> ref (.child doc-id))
@@ -90,21 +87,15 @@
     (prn "not-signed-in")))
 
 (defn load-doc-version [doc-id version-id]
-  (prn "load-doc-version")
   (go
     (let [version-ref (m/get-in ref [doc-id "versions" version-id])
           version (<! (ma/deref< version-ref))]
       (load-state version {:doc-id doc-id :version-id version-id}))))
 
 (defn load-doc-latest [doc-id]
-  (prn "load-doc-latest")
   (go
     (let [version-ref (-> ref (.child doc-id) (.child "versions") (.limitToLast 1))
-          _ (prn (.toString version-ref))
           version (<! (ma/deref< version-ref))
-          _ (prn "version" version)
           version-id (name (ffirst version))
-          _ (prn "version-id" version-id)
-          version (last (first version))
-          _ (prn "version" version)]
+          version (last (first version))]
       (load-state version {:doc-id doc-id :version-id version-id}))))
