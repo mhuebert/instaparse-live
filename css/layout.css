@@ -6,20 +6,27 @@
   background: #F4F4F4;
   font-size: 11px;
   font-family: "Helvetica Neue";
-  color: #35AADB;
+  color: #888;
   //height: 24px;
   box-sizing: border-box;
   padding: 6px 8px;
 }
+#header a {
+color: #35AADB;
+text-decoration: none;
+}
+#header a:hover {
+text-decoration: underline;
+}
 .right {float: right;}
 .left {float: left;}
 
-.button {
+.button, #header a.button {
   color: #C41A6E ;
   font-weight: 500;
   text-decoration: none;
 }
-.button:hover {
+.button:hover, #header a.button:hover {
   text-decoration: underline;
   cursor: pointer;
 }
@@ -65,7 +72,8 @@
   box-sizing: border-box;
 }
 .options, .options .CodeMirror {
-  background: #083D4A;
+  background: #1F071C;
+  text-shadow: none;
 }
 .parse-output .parse-tag {
   display: inline-block;
