@@ -3,7 +3,9 @@
             [app.util :as util])
   )
 
+(defonce options (r/atom util/default-options))
 (defonce grammar (r/atom util/default-grammar))
 (defonce sample (r/atom util/default-sample-code))
 (defonce user (r/atom {}))
 (defonce location (r/atom {}))
+(defonce ui (r/atom {:show-options false}))

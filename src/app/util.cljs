@@ -3,19 +3,21 @@
             [re-com.core   :refer [h-box v-box box gap line scroller border h-split v-split title flex-child-style p]]
             [clojure.walk :refer [postwalk]]
             [reagent.core :as r]
+            [cljs.reader :refer [read-string]]
             ))
 
 (enable-console-print!)
 
-(defn error-message
-  [error-msg]
-  [:div {:style {:padding 10
-                 :color "#D53182"
+(defn string-result
+  [result & {:keys [error]}]
+  (prn error)
+  [:div {:style {:padding     10
+                 :color       (if error "#D53182" "inherit")
                  :font-family "monospace"
                  :white-space "pre-wrap"}}
-   error-msg])
+   result])
 
-(defn visualize-result [result]
+(defn visualized-result [result]
   (let [result (postwalk
                  (fn [x]
                    (if (vector? x) [:div {:class (str "parse-tag " (name (first x)))}
@@ -30,23 +32,37 @@
         last-val (atom {})]
     (fn [& args]
         (if (= @last-args args) @last-val
-                                (do (reset! last-args args)
+                                (do (prn "New parser")
+                                  (reset! last-args args)
                                     (reset! last-val (apply f args))
                                     @last-val)))))
 
 (defonce memoized-parser (memoize-last-val insta/parser))
 
-(defn parse [grammar sample]
+(defn parse [grammar sample options]
   (try
-    (let [parser (memoized-parser grammar)
-          result (insta/parses parser sample)
-          failure (if (insta/failure? result) (insta/get-failure result) nil)]
-      (if failure
-        (error-message (pr-str failure))
-        (visualize-result (take 20 result))))
+    (let [options (read-string options)
+          _ (prn options)
+          parser (apply memoized-parser
+                        (apply concat [grammar] (seq (select-keys options [:input-format :output-format :string-ci]))))
+          result (apply insta/parses
+                        (apply concat [parser sample] (seq (select-keys options [:start :partial :total :unhide :trace]))))
+          ;parser (memoized-parser grammar)
+          ;result (insta/parses parser sample )
+          failure (if (insta/failure? result) (insta/get-failure result) nil)
+          output-format (:output-format options)]
+
+      (cond failure (string-result (pr-str failure) :error true)
+            (contains? [:hiccup :enlive] output-format) (string-result (str result))
+            (= output-format :raw) (string-result result)
+            :else (visualized-result (take (or (:max-parses options) 20) result)))
+      )
     (catch :default e
       (do
-        (error-message e)))))
+        (prn e (string? e))
+        (string-result
+          (if (string? e) e
+                          (str e "\n\n===\n(likely a problem w/ options map)")))))))
 
 (def cm-defaults {
                   :lineNumbers false
@@ -69,13 +85,13 @@
                                      val (or @a "")]
                                 (r/set-state % {:editor editor})
                                 (.setValue editor val)
-                                (add-watch a nil (fn [key reference old-state new-state]
+                                (add-watch a nil (fn [_ _ _ new-state]
                                                    (if (not= new-state (.getValue editor))
-                                                     (.setValue editor new-state))))
+                                                     (.setValue editor (or new-state "")))))
                                 (.on editor "change" (fn [_]
                                                        (let [value (.getValue editor)]
                                                          (reset! a value))))
-)
+                                )
 
       :component-will-unmount #(.off (:editor (r/state %)) "change")
 
@@ -96,3 +112,23 @@ args = (num | <whitespace> | sexp)+
 <whitespace> = #'\\s+'")
 
 (def default-sample-code "(+ 1 (- 3 1))")
+
+(def default-options "{
+  :max-parses 20
+  ; :string-ci true
+  ; :partial false
+  ; :total false
+  ; :input-format  ; [:ebnf, :abnf]
+  ; :output-format ; [:hiccup, :enlive]
+  ; :unhide ; [:content, :tags, :all]
+  ; :start  ; <:rule-name>
+}")
+
+(def blank-grammar "Sentence = (word | comma | <space>)+ end
+
+word = #'\\w+'
+comma = ','
+space = #'\\s'
+end = '.' | '?' | '!' ")
+
+(def blank-sample "Hello, world!")

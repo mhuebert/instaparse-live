@@ -1,6 +1,7 @@
 (ns app.nav
   (:require [app.state :refer [location]]
-            [app.db :as db]
+            [app.db :as db :refer [load-doc-version load-doc-latest load-state]]
+            [app.util :as util]
             [goog.events :as events]
             [goog.history.EventType :as EventType]
             [goog.ui.KeyboardShortcutHandler]
@@ -8,17 +9,22 @@
   (:import goog.History))
 
 ; Define routes
-(defroute doc-path "/:doc" [doc]
-          (reset! location {:doc-id doc}))
 
-(defroute version-path "/:doc/:version" [doc version]
-          (reset! location {:doc-id doc :version-id version}))
+(defroute home "/new" []
+          (load-state {:grammar util/blank-grammar :sample util/blank-sample :options util/default-options} {}))
+
+(defroute doc-path "/:doc-id" [doc-id]
+          (load-doc-latest doc-id))
+
+(defroute version-path "/:doc-id/:version-id" [doc-id version-id]
+          (load-doc-version doc-id version-id))
 
 (defn keyAction [e]
   (let [action (.-identifier e)]
     (prn action)
     (case action
       "SAVE" (db/save))))
+
 
 (defn registerKeys
   ([]
@@ -36,11 +42,9 @@
     (string? e) (secretary/dispatch! e)
     (.-isNavigation e) (secretary/dispatch! (.-token e))))
 
-(defn current-path [location]
-  (let [{:keys [doc-id version-id]} location]
-    (cond (and doc-id version-id) (version-path {:doc doc-id :version version-id})
-          doc-id (doc-path {:doc doc-id})
-          :else "")))
+(defn get-path [loc]
+  (if (= nil (:doc-id loc)) "#/" (version-path loc))
+  )
 
 (defn init []
   (secretary/set-config! :prefix "#")
@@ -48,9 +52,8 @@
     (goog.events/listen h EventType/NAVIGATE dispatch)
     (dispatch (-> js/window .-location .-hash))
     (.setEnabled h true)
-    (add-watch location :set-path (fn [_ _ _ new-state]
-                                    (let [{:keys [doc-id version-id] } new-state
-                                          path (.substr (current-path new-state) 1)]
+    (add-watch location :set-path (fn [_ _ _ new-location]
+                                    (let [path (.substr (get-path new-location) 1)]
                                       (.setToken h path)))))
   (registerKeys))
 

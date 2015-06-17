@@ -14,12 +14,29 @@
 .right {float: right;}
 .left {float: left;}
 
-#header .right a {
+.button {
   color: #C41A6E ;
-  margin-left: 10px;
   font-weight: 500;
+  text-decoration: none;
 }
-
+.button:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+#header .right .button {
+  margin-left: 7px;
+}
+#header .left .button {
+  margin-right: 7px;
+  }
+.description {
+  background-color: rgba(255,255,255,0.3);
+  padding: 10px;
+  margin: 20px 10%;
+  font-size: 13px;
+  color: #555;
+  //border: 1px solid rgba(0,0,0,0.06);
+}
 .CodeMirror{
   display: flex;
   flex-direction: column;
@@ -112,3 +129,7 @@
 .re-v-split-splitter > div > div, .rc-h-split-splitter > div > div {
   display: none;
 }
+
+.hidden {
+  display: none !important
+  }

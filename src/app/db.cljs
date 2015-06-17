@@ -2,11 +2,11 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [matchbox.core :as m]
             [matchbox.async :as ma]
-            [cljs.core.async :as async :refer [<!]]
+            [cljs.core.async :as async :refer [<! put! chan]]
             [cljsjs.firebase :as F]
             [goog.events :as events]
             [reagent.core :as r]
-            [app.state :as state :refer [grammar sample location user]])
+            [app.state :as state :refer [grammar sample location user options]])
   (:import goog.History))
 
 
@@ -28,10 +28,17 @@
 
 (defonce ref (m/connect "http://instaparse-live.firebaseio.com/docs"))
 
-
 (defn current-doc []
   {:grammar @grammar
-   :sample @sample})
+   :sample @sample
+   :options @options})
+
+(defn load-state [version loc]
+  (prn "load-state" loc)
+  (reset! location {:doc-id (:doc-id loc) :version-id (:version-id loc)})
+  (reset! grammar (:grammar version))
+  (reset! sample (:sample version))
+  (reset! options (:options version)))
 
 (defonce _
          (do
@@ -40,53 +47,64 @@
                       (prn (js->clj auth-data))
                       (reset! user (js->clj auth-data :keywordize-keys true))))))
 
-(add-watch location :update-doc (fn [key reference old-state new-state]
-                                  (let [doc-id (:doc-id new-state)
-                                        version-id (:version-id new-state)
-                                        doc-ref (m/get-in ref [doc-id])]
-                                    (if version-id
-                                      (go
-                                        (let [version-ref (-> doc-ref (.child (str "versions/" version-id)))
-                                              doc (<! (ma/deref< version-ref))]
-                                          (prn "version" (.toString version-ref))
-                                          (reset! grammar (:grammar doc))
-                                          (reset! sample (:sample doc))))
-                                      (go
-                                        (let [version-ref (-> doc-ref (.child "versions") (.limitToLast 1))
-                                              doc (<! (ma/deref< version-ref))]
-                                          (prn "doc" doc)
-                                          (reset! grammar (:grammar doc))
-                                          (reset! sample (:sample doc))))))))
-
-
 (defn sign-in-anon []
-  (if-not (.getAuth ref) (m/auth-anon ref)))
+  (if-not (.getAuth ref) (.authAnonymously ref #())))
 
 (defn signed-in? []
   (if (:uid @user) true false))
+
+(defn next-version-id [doc-id]
+  (let [counter-ref (-> ref (.root) (.child "counters") (.child doc-id))
+        id-chan (chan)]
+    (m/swap! counter-ref #(+ 1 (or % 0))
+             :callback (fn [err committed ss]
+                         (if err (prn err) (put! id-chan (str "x" (.val ss))))))
+    id-chan))
 
 (defn save-new []
   (prn "save-new")
   (go
     (let [doc-ref (.push ref)]
-      (prn (:uid @user))
-      (<! (ma/reset!< doc-ref {:owner (:uid @user)} ))
-      (let [version-ref (-> doc-ref (.child "versions") (.push))]
-        (<! (ma/reset!< version-ref (current-doc)))
+      (<! (ma/reset!< doc-ref {:owner (:uid @user) :parent (:doc-id @location)}))
+      (let [version-id (<! (next-version-id (.key doc-ref)))
+            version-ref (.child doc-ref (str "/versions/" version-id))
+            ]
+        (<! (ma/reset-with-priority!< version-ref (current-doc) (.now js/Date)))
         (reset! location {:doc-id (.key doc-ref)
                           :version-id (.key version-ref)})))))
 
 (defn save-version []
   (prn "save-version")
   (go
-    (let [doc-ref (-> ref (.child (:doc-id @location)))
-          version-ref (-> doc-ref (.child "versions") (.push))]
-      (<! (ma/reset!< version-ref (current-doc)))
+    (let [doc-id (:doc-id @location)
+          doc-ref (-> ref (.child doc-id))
+          version-id (<! (next-version-id doc-id))
+          version-ref (-> doc-ref (.child "versions") (.child version-id))]
+      (<! (ma/reset-with-priority!< version-ref (current-doc) (.now js/Date)))
       (swap! location merge {:version-id (.key version-ref)}))))
 
 (defn save []
   (if (signed-in?)
     (go
-      (if (:doc-id @location) (save-version)
-                          (save-new)))
+      (if (:doc-id @location) (save-version) (save-new)))
     (prn "not-signed-in")))
+
+(defn load-doc-version [doc-id version-id]
+  (prn "load-doc-version")
+  (go
+    (let [version-ref (m/get-in ref [doc-id "versions" version-id])
+          version (<! (ma/deref< version-ref))]
+      (load-state version {:doc-id doc-id :version-id version-id}))))
+
+(defn load-doc-latest [doc-id]
+  (prn "load-doc-latest")
+  (go
+    (let [version-ref (-> ref (.child doc-id) (.child "versions") (.limitToLast 1))
+          _ (prn (.toString version-ref))
+          version (<! (ma/deref< version-ref))
+          _ (prn "version" version)
+          version-id (name (ffirst version))
+          _ (prn "version-id" version-id)
+          version (last (first version))
+          _ (prn "version" version)]
+      (load-state version {:doc-id doc-id :version-id version-id}))))
