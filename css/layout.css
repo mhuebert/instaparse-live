@@ -55,7 +55,18 @@
   color: #839496;
   width: 100%;
 }
-
+.options {
+  position: absolute;
+  z-index: 10;
+  bottom: 0;
+  width: 100%;
+  border-top: 4px solid rgba(255,255,255,0.08);
+  padding: 10px;
+  box-sizing: border-box;
+}
+.options, .options .CodeMirror {
+  background: #083D4A;
+}
 .parse-output .parse-tag {
   display: inline-block;
   margin: 0 6px 6px 6px;
