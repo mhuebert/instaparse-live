@@ -1,18 +1,20 @@
 (ns app.nav
-  (:require [app.state :refer [location]]
+  (:require [app.state :as state :refer [location]]
             [app.db :as db :refer [load-doc-version load-doc-latest load-state]]
             [app.data :as data]
             [goog.events :as events]
             [goog.history.EventType :as EventType]
             [goog.ui.KeyboardShortcutHandler]
-            [secretary.core :as secretary :refer-macros [defroute]]
-            [app.state :as state])
+            [secretary.core :as secretary :refer-macros [defroute]])
   (:import goog.History))
 
 ; Define routes
 
+(defroute "/" []
+          (load-state data/blank {}))
+
 (defroute home "/new" []
-          (load-state {:grammar data/blank-grammar :sample data/blank-sample :options data/default-options} {}))
+          (load-state data/blank {}))
 
 (defroute doc-path "/:doc-id" [doc-id]
           (load-doc-latest doc-id))
@@ -23,13 +25,12 @@
 
 (defn toggle-options []
   (swap! state/ui merge {:show-options (not (:show-options @state/ui))})
-  (js/setTimeout #(.focus (last (last @state/editors))) 15)
+  (js/setTimeout #(.focus (last (last (:editors @state/ui)))) 15)
   )
 
 (defn editor-jump []
-  (let [editors @state/editors
-        focused @state/editor-focus
-        editor (or (last (first (subseq editors > focused))) (last (first editors)))]
+  (let [{:keys [editors editor-focus]} @state/ui
+        editor (or (last (first (subseq editors > editor-focus))) (last (first editors)))]
     (.focus editor))
   )
 

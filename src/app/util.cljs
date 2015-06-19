@@ -3,6 +3,7 @@
             [re-com.core   :refer [h-box v-box box gap line scroller border h-split v-split title flex-child-style p]]
             [clojure.walk :refer [postwalk]]
             [reagent.core :as r]
+            [reagent.cursor :refer [cursor]]
             [fipp.edn :refer [pprint]]
             [cljs.reader :refer [read-string]]
             [app.state :as state]))
@@ -39,7 +40,7 @@
 
 (defonce memoized-parser (memoize-last-val insta/parser))
 
-(defn parse [grammar sample options]
+(defn parse [{:keys [grammar sample options]}]
   (try
     (let [options (read-string options)
           parser (apply memoized-parser
@@ -68,35 +69,37 @@
 (defn cm-editor
   ([a] (cm-editor a {}))
   ([a options]
+   (let [ui-editors (cursor [:editors] state/ui)
+         ui-editor-focus (cursor [:editor-focus] state/ui)]
 
-   (r/create-class
-     {
-      :component-did-mount    #(let [node (.getDOMNode %)
-                                     config (clj->js (merge cm-defaults options))
-                                     editor (.fromTextArea js/CodeMirror node config)
-                                     val (or @a "")
-                                     id (or (:name options) (.now js/Date))]
-                                (swap! state/editors merge {id editor})
-                                (r/set-state % {:editor editor :id id})
-                                (.setValue editor val)
-                                (add-watch a nil (fn [_ _ _ new-state]
-                                                   (if (not= new-state (.getValue editor))
-                                                     (.setValue editor (or new-state "")))))
-                                (.on editor "change" (fn [_]
-                                                       (let [value (.getValue editor)]
-                                                         (reset! a value))))
-                                (.on editor "focus" (fn [_] (reset! state/editor-focus id))))
+     (r/create-class
+       {
+        :component-did-mount    #(let [node (.getDOMNode %)
+                                       config (clj->js (merge cm-defaults options))
+                                       editor (.fromTextArea js/CodeMirror node config)
+                                       val (or @a "")
+                                       id (or (:name options) (.now js/Date))]
+                                  (swap! ui-editors merge {id editor})
+                                  (r/set-state % {:editor editor :id id})
+                                  (.setValue editor val)
+                                  (add-watch a nil (fn [_ _ _ new-state]
+                                                     (if (not= new-state (.getValue editor))
+                                                       (.setValue editor (or new-state "")))))
+                                  (.on editor "change" (fn [_]
+                                                         (let [value (.getValue editor)]
+                                                           (reset! a value))))
+                                  (.on editor "focus" (fn [_] (reset! ui-editor-focus id))))
 
-      :component-will-unmount (fn [x]
-                                (let [{:keys [id editor]} (r/state x)]
-                                  (swap! state/editors dissoc id)
-                                  (.off editor)))
+        :component-will-unmount (fn [x]
+                                  (let [{:keys [id editor]} (r/state x)]
+                                    (swap! ui-editors dissoc id)
+                                    (.off editor)))
 
 
-      :display-name           "CodeMirror Component"
-      :reagent-render         (fn []
-                                [:textarea {:style {:width "100%" :height "100%" :display "flex" :background "red" :flex 1}}])
-      })))
+        :display-name           "CodeMirror Component"
+        :reagent-render         (fn []
+                                  [:textarea {:style {:width "100%" :height "100%" :display "flex" :background "red" :flex 1}}])
+        }))))
 
 (defn throw-err [e]
   (if (instance? js/Error e) (throw e) e))

@@ -8,7 +8,7 @@
             [cljsjs.firebase :as F]
             [goog.events]
             [reagent.core :as r]
-            [app.state :refer [grammar sample location user options ui errors]])
+            [app.state :as state :refer [working-version location user ui]])
   (:import goog.History))
 
 
@@ -27,16 +27,9 @@
 
 (defonce ref (m/connect "http://instaparse-live.firebaseio.com/docs"))
 
-(defn current-doc []
-  {:grammar @grammar
-   :sample @sample
-   :options @options})
-
 (defn load-state [version loc]
-  (reset! location {:doc-id (:doc-id loc) :version-id (:version-id loc)})
-  (reset! grammar (:grammar version))
-  (reset! sample (:sample version))
-  (reset! options (:options version)))
+  (reset! state/working-version version)
+  (reset! location {:doc-id (:doc-id loc) :version-id (:version-id loc)}))
 
 (defonce _
          (do
@@ -49,10 +42,16 @@
   (if-not (.getAuth ref) (.authAnonymously ref #())))
 
 (defn sign-in-github []
-  )
+  (.authWithOAuthPopup ref "github"
+                       (fn [error auth-data]
+                         (if error (prn (js/Error error))
+                                   (prn auth-data)))))
 
 (defn signed-in? []
   (if (:uid @user) true false))
+
+(defn sign-out []
+  (.unauth ref))
 
 (defn next-version-id [doc-id]
   (let [counter-ref (-> ref (.root) (.child "counters") (.child doc-id))
@@ -63,15 +62,29 @@
                            (put! id-chan (or err (str "v" (.val ss)))))))
     id-chan))
 
+
 (defn save-new []
   (go?
     (let [doc-ref (.push ref)]
-      (<? (ma/reset!< doc-ref {:owner (:uid @user) :parent (:doc-id @location)}))
+      (<? (ma/reset!< doc-ref {:owner (:uid @user)
+                               :username (get-in @user [:github :username])
+                               :parent (:doc-id @location)}))
       (let [version-id (<! (next-version-id (.key doc-ref)))
             version-ref (.child doc-ref (str "/versions/" version-id))]
-        (<? (ma/reset-with-priority!< version-ref (current-doc) (.now js/Date)))
+        (<? (ma/reset-with-priority!< version-ref @working-version (.now js/Date)))
         (reset! location {:doc-id (.key doc-ref)
                           :version-id (.key version-ref)})))))
+
+(defn fork []
+  (if-not (= "Forking..." (:fork-status @ui))
+    (go
+      (swap! ui merge {:fork-status "Forking..."})
+      (try
+        (do
+          (<? (save-new))
+          (swap! ui merge {:fork-status "Fork"}))
+        (catch js/Error e
+          (swap! ui merge {:fork-status (js/Error "Error forking")}))))))
 
 (defn save-version []
   (go?
@@ -79,7 +92,7 @@
           doc-ref (-> ref (.child doc-id))
           version-id (<? (next-version-id doc-id))
           version-ref (-> doc-ref (.child "versions") (.child version-id))]
-      (<? (ma/reset-with-priority!< version-ref (current-doc) (.now js/Date)))
+      (<? (ma/reset-with-priority!< version-ref @working-version (.now js/Date)))
       (swap! location merge {:version-id (.key version-ref)}))))
 
 (defn save []
@@ -93,7 +106,7 @@
             (swap! ui assoc-in [:save-status] "Save"))
           (prn "not-signed-in"))
         (catch js/Error e
-          (swap! ui assoc-in [:save-status] [:span {:style {:color "white" :background "red" :padding "2px 4px"}} "Error saving"])
+          (swap! ui merge {:save-status (js/Error "Error saving")})
           (prn "save error" e))))))
 
 (defn load-doc-version [doc-id version-id]

@@ -2,14 +2,11 @@
   (:require [reagent.core :as r]
             [app.data :as data]))
 
-(defonce editors (atom (sorted-map)))
-(defonce editor-focus (atom nil))
-(defonce options (r/atom data/default-options))
-(defonce grammar (r/atom data/default-grammar))
-(defonce sample (r/atom data/default-sample-code))
 (defonce user (r/atom {}))
 (defonce location (r/atom {}))
 (defonce ui (r/atom {:show-options false
-                     :save-status "Save"}))
-(defonce errors (r/atom []))
-
+                     :save-status "Save"
+                     :fork-status "Fork"
+                     :editors (sorted-map)
+                     :editor-focus nil}))
+(defonce working-version (r/atom data/blank))

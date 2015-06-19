@@ -23,11 +23,13 @@ args = (num | <whitespace> | sexp)+
   ; :start  ; <:rule-name>
 }")
 
-(def blank-grammar "Sentence = (word | comma | <space>)+ end
+(def blank {
+            :grammar "Sentence = (word | comma | <space>)+ end
 
 word = #'\\w+'
 comma = ','
 space = #'\\s'
-end = '.' | '?' | '!' ")
-
-(def blank-sample "Hello, world!")
+end = '.' | '?' | '!' "
+            :sample "Hello, world!"
+            :options default-options
+            })
