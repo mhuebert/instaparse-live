@@ -32,10 +32,10 @@
         last-val (atom {})]
     (fn [& args]
         (if (= @last-args args) @last-val
-                                (do (prn "New parser")
+                                (do
                                   (reset! last-args args)
-                                    (reset! last-val (apply f args))
-                                    @last-val)))))
+                                  (reset! last-val (apply f args))
+                                  @last-val)))))
 
 (defonce memoized-parser (memoize-last-val insta/parser))
 
@@ -97,3 +97,6 @@
       :reagent-render         (fn []
                                 [:textarea {:style {:width "100%" :height "100%" :display "flex" :background "red" :flex 1}}])
       })))
+
+(defn throw-err [e]
+  (if (instance? js/Error e) (throw e) e))

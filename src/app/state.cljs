@@ -9,4 +9,7 @@
 (defonce sample (r/atom data/default-sample-code))
 (defonce user (r/atom {}))
 (defonce location (r/atom {}))
-(defonce ui (r/atom {:show-options false}))
+(defonce ui (r/atom {:show-options false
+                     :save-status "Save"}))
+(defonce errors (r/atom []))
+

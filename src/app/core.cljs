@@ -33,11 +33,12 @@
     [:a {:class "button" :on-click db/save-new} "Fork"]
 
     [:span {:class (if-not (:doc-id @location) "hidden")}
-     [:strong [:a {:href (str "#/" (:doc-id @location) "/" (:version-id @location))} "Link"]]]
-    ]
+     [:strong [:a {:href (str "#/" (:doc-id @location) "/" (:version-id @location))} (:version-id @location) ]]]]
+
+   [:span {:style {:color "red"}} (str (last @state/errors))]
    [:span {:class "right"}
     (cond (= "anonymous" (:provider @user)) "Anonymous" (= {} @user) "Signing in" :else (:uid @user))
-    [:a {:class "button" :on-click db/save :title "CMD-s"} "Save"]
+    [:a {:class "button" :on-click db/save :title "CMD-s"} (:save-status @state/ui)]
     ]])
 
 (defn parsed-output []
