@@ -8,28 +8,18 @@
             [cljsjs.firebase :as F]
             [goog.events]
             [reagent.core :as r]
-            [app.state :as state :refer [working-version location user ui]])
-  (:import goog.History))
+            [app.state :as state :refer [doc user ui]]))
 
 
-; If anon-user - save anon-user ID in atom
-; Fork -> push the two atoms into a new doc's versions
-; Load -> grab a doc from Firebase and reset! atoms
-; Sign in -> prompt for Github & set all anon-user docs as owned by Github user
-; Sign out
+; todo:
+; - do not attempt save if user is not owner of doc - do not show the link
+; - list docs for user
+; - review security rules
+; - view/navigate versions of a doc
+; - title and description of a doc
+; - show username of doc creator
 
-; On sign-in - if anon-user is in atom, merge the stuff & then clear the atom
-; LINK - sign out
-; LINK - sign in with GitHub / Twitter
-; Figure out how to batch-update docs that are associated with a given user
-; Security rules, basic
-
-
-(defonce ref (m/connect "http://instaparse-live.firebaseio.com/docs"))
-
-(defn load-state [version loc]
-  (reset! state/working-version version)
-  (reset! location {:doc-id (:doc-id loc) :version-id (:version-id loc)}))
+(defonce ref (m/connect "http://instaparse-live.firebaseio.com/"))
 
 (defonce _
          (do
@@ -54,7 +44,7 @@
   (.unauth ref))
 
 (defn next-version-id [doc-id]
-  (let [counter-ref (-> ref (.root) (.child "counters") (.child doc-id))
+  (let [counter-ref (m/get-in ref [:counters doc-id])
         id-chan (chan)]
     (m/swap! counter-ref #(+ 1 (or % 0))
              :callback (fn [err committed ss]
@@ -64,16 +54,24 @@
 
 
 (defn save-new []
-  (go?
-    (let [doc-ref (.push ref)]
-      (<? (ma/reset!< doc-ref {:owner (:uid @user)
-                               :username (get-in @user [:github :username])
-                               :parent (:doc-id @location)}))
-      (let [version-id (<! (next-version-id (.key doc-ref)))
-            version-ref (.child doc-ref (str "/versions/" version-id))]
-        (<? (ma/reset-with-priority!< version-ref @working-version (.now js/Date)))
-        (reset! location {:doc-id (.key doc-ref)
-                          :version-id (.key version-ref)})))))
+
+  (let [doc-ref (.push (m/get-in ref [:docs]))
+        doc-id (.key doc-ref)
+        new-doc (merge @state/doc {:owner    (:uid @user)
+                                   :username (get-in @user [:github :username])
+                                   :parent   {:doc-id (:id @state/doc) :version-id (:id @state/version)}
+                                   :id       doc-id})]
+    (go?
+      (<? (ma/reset!< doc-ref new-doc))
+      (swap! state/doc merge new-doc))
+
+    (go?
+      (let [version-id (<! (next-version-id doc-id))
+            version-ref (m/get-in ref [:versions doc-id version-id])
+            version (merge @state/version {:id version-id})]
+
+        (<? (ma/reset-with-priority!< version-ref version (.now js/Date)))
+        (reset! state/version version)))))
 
 (defn fork []
   (if-not (= "Forking..." (:fork-status @ui))
@@ -84,41 +82,48 @@
           (<? (save-new))
           (swap! ui merge {:fork-status "Fork"}))
         (catch js/Error e
+          (prn e)
           (swap! ui merge {:fork-status (js/Error "Error forking")}))))))
 
 (defn save-version []
+  (go
+    (<? (ma/reset!< (m/get-in ref [:docs (:id @state/doc)]) @state/doc)))
   (go?
-    (let [doc-id (:doc-id @location)
-          doc-ref (-> ref (.child doc-id))
+    (let [doc-id (:id @doc)
           version-id (<? (next-version-id doc-id))
-          version-ref (-> doc-ref (.child "versions") (.child version-id))]
-      (<? (ma/reset-with-priority!< version-ref @working-version (.now js/Date)))
-      (swap! location merge {:version-id (.key version-ref)}))))
+          version-ref (m/get-in ref [:versions doc-id version-id])
+          version (assoc @state/version :id version-id)]
+
+      (<? (ma/reset-with-priority!< version-ref version (.now js/Date)))
+      (swap! state/version assoc :id version-id))))
 
 (defn save []
-  (if-not (= "Saving..." (:save-status @ui))
+  (if (and (signed-in?) (not= "Saving..." (:save-status @ui)))
     (go
-      (swap! ui merge {:save-status "Saving..."})
       (try
-        (if (signed-in?)
-          (do
-            (<? (if (:doc-id @location) (save-version) (save-new)))
-            (swap! ui assoc-in [:save-status] "Save"))
-          (prn "not-signed-in"))
+        (do
+          (swap! ui merge {:save-status "Saving..."})
+          (<? (if (:id @doc) (save-version) (save-new)))
+          (swap! ui assoc-in [:save-status] "Save")
+          (.setToken state/h (str "/" (:id @state/doc))))
         (catch js/Error e
           (swap! ui merge {:save-status (js/Error "Error saving")})
           (prn "save error" e))))))
 
-(defn load-doc-version [doc-id version-id]
-  (go?
-    (let [version-ref (m/get-in ref [doc-id "versions" version-id])
-          version (<? (ma/deref< version-ref))]
-      (load-state version {:doc-id doc-id :version-id version-id}))))
+(defn get-in-ref [path]
+  (go
+    (let [item-ref (m/get-in ref path)]
+      (<! (ma/deref< item-ref)))))
 
-(defn load-doc-latest [doc-id]
-  (go?
-    (let [version-ref (-> ref (.child doc-id) (.child "versions") (.limitToLast 1))
-          version (<? (ma/deref< version-ref))
-          version-id (name (ffirst version))
-          version (last (first version))]
-      (load-state version {:doc-id doc-id :version-id version-id}))))
+(defn get-doc [id]
+  (go? (<? (get-in-ref [:docs id]))))
+
+(defn get-version
+  ([doc-id]
+   (go?
+      (let [version-id (str "v"
+                             (or (<? (get-in-ref ["counters" doc-id])) 1))]
+        (<? (get-version doc-id version-id)))))
+  ([doc-id version-id]
+   (go? (<? (get-in-ref [:versions doc-id version-id])))))
+

@@ -12,6 +12,7 @@
                  [cljsjs/codemirror "5.1.0-2"]
                  [reagent "0.5.0"]
                  [reagent/reagent-cursor "0.1.2"]
+                 [cljsjs/markdown "0.6.0-beta1-0"]
                  [re-com "0.5.4"]
                  [fipp "0.6.2"]
                  [cljsjs/firebase "2.2.3-0"]

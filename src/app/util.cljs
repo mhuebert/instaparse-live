@@ -6,7 +6,8 @@
             [reagent.cursor :refer [cursor]]
             [fipp.edn :refer [pprint]]
             [cljs.reader :refer [read-string]]
-            [app.state :as state]))
+            [app.state :as state]
+            [app.db :as db]))
 
 (enable-console-print!)
 
@@ -17,6 +18,50 @@
                  :font-family "monospace"
                  :white-space "pre-wrap"}}
    result])
+
+(defn focus [id]
+  (.setTimeout js/window
+               (fn []
+                 (.focus (.getElementById js/document id))) 20))
+
+
+(defn editable-text
+  ([a] (editable-text a {}))
+  ([a options]
+   (let [options (merge {:edit-text "edit"
+                         :finish-text "done"
+                         :owner true} options)
+         input-id (rand-int 9999)
+         handle-change (fn [e]
+                         (reset! a (.-value (.-target e))))
+         editing (r/atom false)
+         toggle-edit (fn []
+                       (reset! editing (not @editing))
+                       (focus input-id)
+                       (if-not @editing (db/save))
+                       )]
+     (fn []
+       (let [input-options {:id input-id :on-change handle-change :on-blur toggle-edit :value @a}
+             md (:markdown options)
+             owner (= (:uid @state/user) (:owner @state/doc))
+             display-opts {:class (str (if owner "as-owner"))
+                           :on-click (if owner toggle-edit #())
+                           }]
+         [:span
+          {:class "editable-text"
+           :style {:display (if (:markdown options) "block" "inline")}}
+          [:span {:class (if @editing "" "hidden")}
+           (if (:markdown options)
+             [:textarea input-options]
+             [:input (merge input-options (:input options))])]
+          [:span { :class (if @editing "hidden" "")}
+           (if md
+             [:div (merge display-opts {:dangerouslySetInnerHTML {:__html (.toHTML js/markdown (or @a ""))}})]
+             [:span display-opts @a])
+           (if-not (and (:only-power-edit options) (not @state/power))
+                   (if (and owner (empty? @a))
+                     [:span " " [:a {:class "text-link" :on-click toggle-edit}
+                                 (:empty-text options)]]))]])))))
 
 (defn visualized-result [result]
   (let [result (postwalk
@@ -41,6 +86,7 @@
 (defonce memoized-parser (memoize-last-val insta/parser))
 
 (defn parse [{:keys [grammar sample options]}]
+
   (try
     (let [options (read-string options)
           parser (apply memoized-parser

@@ -23,13 +23,25 @@ args = (num | <whitespace> | sexp)+
   ; :start  ; <:rule-name>
 }")
 
-(def blank {
-            :grammar "Sentence = (word | comma | <space>)+ end
+(def sample-doc {:username "mhuebert"
+            :title "Example"
+            :description "Build a parser in your browser! This page runs the [ClojureScript port](https://github.com/lbradstreet/instaparse-cljs) of [Instaparse](https://github.com/Engelberg/instaparse)."
+            :owner nil})
+
+(def sample-version {
+                    :grammar "Sentence = (word | comma | <space>)+ end
 
 word = #'\\w+'
 comma = ','
 space = #'\\s'
 end = '.' | '?' | '!' "
-            :sample "Hello, world!"
-            :options default-options
-            })
+                    :sample  "Hello, world!"
+                    :options default-options
+                    })
+
+(def loading-doc {})
+(def loading-version {:grammar "Patience := expectation+
+expectation = '.'"
+                      :sample "..."
+                      :options default-options
+                  })
