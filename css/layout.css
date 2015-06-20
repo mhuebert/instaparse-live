@@ -62,6 +62,31 @@ text-decoration: underline;
   color: #839496;
   width: 100%;
 }
+.text-link {
+  text-decoration: underline;
+  color: #999;
+  }
+.editable-text textarea {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 10px 0;
+}
+
+.editable-text input, .editable-text textarea {
+  outline: 0;
+  padding: 3px 5px;
+  font-size: 14px;
+  background-color: rgba(255,255,255,0.3);
+  border: none;
+}
+
+.editable-text .as-owner:hover {
+  cursor: pointer;
+  text-decoration: underline;
+  }
+.editable-text a {
+  cursor: pointer;
+}
 .options {
   position: absolute;
   z-index: 10;
