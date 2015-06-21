@@ -1,8 +1,6 @@
 (ns ^:figwheel-always app.core
   (:require
-    [cljsjs.codemirror]
     [cljsjs.markdown]
-    [cljsjs.codemirror.mode.clojure]
     [app.util :as util]
     [app.nav :as nav]
     [app.state :as state :refer [user doc]]
@@ -91,7 +89,7 @@
                :panel-2 [v-box
                          :size "1"
                          :style {:position "relative"}
-                         :children [[util/cm-editor (cursor [:grammar] state/version)]
+                         :children [[util/cm-editor (cursor [:grammar] state/version) {:mode "ebnf"}]
                                     [options]]]
                ]]])
 

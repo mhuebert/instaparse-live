@@ -9,7 +9,6 @@
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [com.lucasbradstreet/instaparse-cljs "1.4.0.0-SNAPSHOT"]
                  [secretary "1.2.3"]
-                 [cljsjs/codemirror "5.1.0-2"]
                  [reagent "0.5.0"]
                  [reagent/reagent-cursor "0.1.2"]
                  [cljsjs/markdown "0.6.0-beta1-0"]
@@ -43,7 +42,6 @@
                          :main app.core
                          :optimizations :advanced
                          :pretty-print false
-                         :externs ["resources/private/js/codemirror-externs.js"]
                          }}]}
 
   :figwheel {
