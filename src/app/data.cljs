@@ -25,7 +25,9 @@ args = (num | <whitespace> | sexp)+
 
 (def sample-doc {:username "mhuebert"
             :title "Example"
-            :description "Build a parser in your browser! This page runs the [ClojureScript port](https://github.com/lbradstreet/instaparse-cljs) of [Instaparse](https://github.com/Engelberg/instaparse)."
+            :description "Build a parser in your browser! Read the [**Instaparse docs**](https://github.com/Engelberg/instaparse/blob/master/README.md) to get started.
+
+*—thanks to [instaparse](https://github.com/Engelberg/instaparse) + [instaparse-cljs](https://github.com/lbradstreet/instaparse-cljs)!*"
             :owner nil})
 
 (def sample-version {

@@ -97,7 +97,7 @@
           output-format (:output-format options)
           max-parses (or (:max-parses options) 20)]
       (cond failure (string-result (pr-str failure) :error true)
-            (contains? [:hiccup :enlive] output-format) (string-result (with-out-str (pprint result)))
+            (some #{:hiccup :enlive} #{output-format}) (string-result (with-out-str (pprint result)))
             :else (visualized-result (take max-parses result))))
     (catch :default e
       (let [message (if (string? e) e (str "Options Map " e))]
