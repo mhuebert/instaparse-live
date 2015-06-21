@@ -22,7 +22,8 @@
    [:span {:class "left"}
     [:a {:class "button" :on-click nav/new-doc} "New"]
     [:a {:class "button" :on-click db/fork} (fancy-errors (:fork-status @state/ui))]
-    (if (= (:owner @state/doc) (:uid @state/user)) [:a {:class "button" :on-click db/save :title "CMD-s"} (fancy-errors (:save-status @state/ui))])
+    (if (and (:uid @state/user) (= (:owner @state/doc) (:uid @state/user)))
+      [:a {:class "button" :on-click db/save :title "CMD-s"} (fancy-errors (:save-status @state/ui))])
 
     [:span {:class (if-not (:id @doc) "hidden")}
      [:strong [:a {:href (str "#/" (:id @doc) "/" (:id @state/version))} (:id @state/version)]]]]

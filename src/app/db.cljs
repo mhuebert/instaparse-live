@@ -41,6 +41,7 @@
   (if (:uid @user) true false))
 
 (defn sign-out []
+  (reset! user {})
   (.unauth ref))
 
 (defn next-version-id [doc-id]
