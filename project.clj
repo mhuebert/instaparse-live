@@ -42,6 +42,7 @@
                          :main app.core
                          :optimizations :advanced
                          :pretty-print false
+                         :externs ["resources/private/js/codemirror-externs.js"]
                          }}]}
 
   :figwheel {
