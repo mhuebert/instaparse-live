@@ -1,8 +1,10 @@
 (ns ^:figwheel-always app.core
   (:require
     [cljsjs.markdown]
-    [app.util :as util]
-    [app.nav :as nav]
+    [app.components :as c]
+    [app.routes :as nav]
+    [app.keys :as keys]
+    [app.compute :as compute]
     [app.state :as state :refer [user doc]]
     [reagent.core :as r]
     [reagent.cursor :refer [cursor]]
@@ -40,17 +42,23 @@
   [:div
    {:id "parsed-output"
     :style {:overflow-y "auto" :marginTop 30 :width "100%"}}
-   (util/parse @state/version)])
+   @state/output])
 
 (defn options []
-  [:div {:class "options"}
-   [:div
-    {:class    "button"
-     :style    {:text-align "center"}
-     :on-click nav/toggle-options}
-    "Options"]
-   (if (= true (:show-options @state/ui))
-     [:div [util/cm-editor (cursor [:options] state/version) {:mode "clojure" :style "background:white"}]])])
+  (let [show-options (r/atom false)
+        toggle (fn [] (reset! show-options (not @show-options)))]
+    (r/create-class {
+                     :component-did-mount    (fn [] (keys/register "ctrl+o" (fn [] (toggle) (c/focus-last-editor))))
+                     :component-will-unmount (fn [] (keys/unregister "ctrl+o"))
+                     :render                 (fn []
+                                               [:div {:class "options"}
+                                                [:div
+                                                 {:class    "button"
+                                                  :style    {:text-align "center"}
+                                                  :on-click toggle}
+                                                 "Options"]
+                                                (if @show-options
+                                                  [:div [c/cm-editor (cursor [:options] state/version) {:mode "clojure" :style "background:white"}]])])})))
 
 (defn description []
 
@@ -59,48 +67,44 @@
       [:div {:style {:margin "15px 10%" :overflow-y "auto"}}
        [:a {:href (str "https://www.github.com/" (:username @state/doc))} (:username @state/doc)]
        (if (and (:username @state/doc) (or owner (:title @state/doc))) " / ")
-       [:strong [util/editable-text (cursor [:title] state/doc) {:empty-text "title"
+       [:strong [c/editable-text (cursor [:title] state/doc) {:empty-text "title"
                                                                  :input      {:style {:width "350px"}}}]]
-       [util/editable-text (cursor [:description] state/doc) {:empty-text "description"
+       [c/editable-text (cursor [:description] state/doc) {:empty-text "description"
                                                               :edit-text  "edit description"
                                                               :markdown   true
                                                               :only-power-edit true}]
        ])))
 
-; The main app component
+(defn editor []
+  [h-split
+   :height "100%"
+   :margin "0"
+   :initial-split "65"
+   :style {:background "#e0e0e0"}
+   :panel-1
+   [v-box
+    :width "100%"
+    :children [[description]
+               [v-split
+                :margin "0 10% 20px"
+                :initial-split "25"
+                :panel-1 [:div
+                          {:style {:border "1px solid #C2C2C1" :flex 1 :display "flex"}}
+                          [c/cm-editor (cursor [:sample] state/version) {:theme "solarized light"}]]
+                :panel-2 [parsed-output]
+                ]]]
+   :panel-2 [v-box
+             :size "1"
+             :style {:position "relative"}
+             :children [[c/cm-editor (cursor [:grammar] state/version) {:mode "ebnf"}]
+                        [options]]]])
+
+
 (defn app []
   [v-box
    :height "100%"
    :children [[header]
-              [h-split
-               :height "100%"
-               :margin "0"
-               :initial-split "65"
-               :style {:background "#e0e0e0"}
-               :panel-1
-               [v-box
-                :width "100%"
-                :children [[description]
-                           [v-split
-                            :margin "0 10% 20px"
-                            :initial-split "25"
-                            :panel-1 [:div {:style {:border "1px solid #C2C2C1" :flex 1 :display "flex"}} [util/cm-editor (cursor [:sample] state/version) {:theme "solarized light"}]]
-                            :panel-2 [parsed-output]
-                            ]]]
-               :panel-2 [v-box
-                         :size "1"
-                         :style {:position "relative"}
-                         :children [[util/cm-editor (cursor [:grammar] state/version) {:mode "ebnf"}]
-                                    [options]]]
-               ]]])
+              [editor]]])
 
 ; Bind Reagent component to DOM
 (r/render-component [app] (.getElementById js/document "app"))
-
-; Configure routing
-(defonce _
-         (do
-           (nav/init)
-           (db/sign-in-anon)))
-
-

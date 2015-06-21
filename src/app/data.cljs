@@ -31,8 +31,9 @@ args = (num | <whitespace> | sexp)+
             :owner nil})
 
 (def sample-version {
-                    :grammar "Sentence = (word | comma | <space>)+ end
+                    :grammar "(* Sample grammar in ebnf notation *)
 
+Sentence = (word | comma | <space>)+ end
 word = #'\\w+'
 comma = ','
 space = #'\\s'
