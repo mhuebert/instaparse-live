@@ -9,3 +9,10 @@
   `(cljs.core.async.macros/go
      (try (do ~@forms)
           (catch js/Error e e))))
+
+#_(defmacro cell=
+  "Run this function & re-run whenever the result changes"
+  [label & body]
+  `(reset! (app.state/cell ~label)
+           (reagent.ratom/reaction
+             (do ~@body))))

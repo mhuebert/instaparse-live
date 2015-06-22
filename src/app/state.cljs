@@ -1,5 +1,6 @@
 (ns app.state
-  (:require-macros [reagent.ratom :refer [reaction]])
+  (:require-macros [reagent.ratom :refer [reaction]]
+                   #_[app.macros :refer [cell=]])
   (:require [reagent.core :as r]
             [reagent.cursor :refer [cursor]]
             [app.data :as data]
@@ -17,13 +18,13 @@
 (def doc (cursor [:doc] db))
 (def user (cursor [:user] db))
 (def ui (cursor [:ui] db))
+(defonce history (History.))
 
-(defn cell [label] (cursor [label] cells))
-(defn cell! [label value]
-  (swap! cells assoc label value))
+(defn cell [label]
+  (cursor [label] cells))
+
 
 (defonce output
          (reaction
            (compute/parse @cells)))
 
-(defonce history (History.))

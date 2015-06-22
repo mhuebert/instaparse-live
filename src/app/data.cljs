@@ -23,23 +23,7 @@ args = (num | <whitespace> | sexp)+
   ; :start  ; <:rule-name>
 }")
 
-(def samples
-  {:doc {:username "mhuebert"
-         :title "Example"
-         :description "Build a parser in your browser! Read the [**Instaparse docs**](https://github.com/Engelberg/instaparse/blob/master/README.md) to get started.
 
-*—thanks to [instaparse](https://github.com/Engelberg/instaparse) + [instaparse-cljs](https://github.com/lbradstreet/instaparse-cljs)!*"
-         :owner nil}
-   :grammar "(* Sample grammar in ebnf notation *)
-
-Sentence = (word | comma | <space>)+ end
-word = #'\\w+'
-comma = ','
-space = #'\\s'
-end = '.' | '?' | '!' "
-   :sample "Hello, world!"
-   :options default-options
-   })
 
 (def sample-doc {:username "mhuebert"
             :title "Example"

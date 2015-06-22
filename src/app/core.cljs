@@ -5,7 +5,7 @@
     [app.routes :as routes]
     [app.keys :as keys]
     [app.compute :as compute]
-    [app.state :as state :refer [user doc cell history]]
+    [app.state :as state :refer [user doc cell]]
     [reagent.core :as r]
     [reagent.cursor :refer [cursor]]
     [re-com.core :refer [h-box v-box box gap line scroller border h-split v-split title flex-child-style p]]
