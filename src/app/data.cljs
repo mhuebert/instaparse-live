@@ -17,8 +17,8 @@ args = (num | <whitespace> | sexp)+
   ; :string-ci true
   ; :partial false
   ; :total false
-  ; :input-format  ; [:ebnf, :abnf]
-  ; :output-format ; [:hiccup, :enlive]
+  ; :input-format  :abnf; [:ebnf]
+  ; :output-format :hiccup ; [:enlive]
   ; :unhide ; [:content, :tags, :all]
   ; :start  ; <:rule-name>
 }")

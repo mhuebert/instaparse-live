@@ -1,8 +1,7 @@
 (ns app.keys
   (:require  [goog.ui.KeyboardShortcutHandler]
-             [app.routes :as nav]
              [app.db :as db]
-             [goog.events :as events]))
+             [goog.events]))
 
 (defonce handler (new goog.ui.KeyboardShortcutHandler js/document))
 (defonce actions (atom {}))

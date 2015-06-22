@@ -7,7 +7,7 @@
 
 (defonce memoized-parser (util/memoize-last-val insta/parser))
 
-(defn string-result
+(defn- string-result
   [result & {:keys [error]}]
   [:div {:style {:padding     10
                  :color       (if error "#D53182" "inherit")
@@ -15,12 +15,12 @@
                  :white-space "pre-wrap"}}
    result])
 
-(defn visualized-result [result]
+(defn- visualized-result [result]
   (let [result (postwalk
                  (fn [x]
                    (if (vector? x) [:div {:class (str "parse-tag " (name (first x)))}
                                     [:span {:class "tag-name"} (str (first x) " ")] (rest x)]
-                                   x))
+                                    x))
                  result)]
     [:div {:class "parse-output"} (interpose [:div {:class "parse-sep"}] result)]))
 
@@ -38,5 +38,6 @@
             (some #{:hiccup :enlive} #{output-format}) (string-result (with-out-str (pprint result)))
             :else (visualized-result (take max-parses result))))
     (catch :default e
-      (let [message (if (string? e) e (str "Options Map " e))]
+      (.log js/console e)
+      (let [message (if (string? e) e (str e))]
         (string-result message :error true)))))

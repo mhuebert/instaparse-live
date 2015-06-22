@@ -2,7 +2,7 @@
   (:require
     [cljsjs.markdown]
     [app.components :as c]
-    [app.routes :as nav]
+    [app.routes :as routes]
     [app.keys :as keys]
     [app.compute :as compute]
     [app.state :as state :refer [user doc]]
@@ -22,7 +22,7 @@
   [:div
    {:id "header"}
    [:span {:class "left"}
-    [:a {:class "button" :on-click nav/new-doc} "New"]
+    [:a {:class "button" :on-click routes/new-doc} "New"]
     [:a {:class "button" :on-click db/fork} (fancy-errors (:fork-status @state/ui))]
     (if (and (:uid @state/user) (= (:owner @state/doc) (:uid @state/user)))
       [:a {:class "button" :on-click db/save :title "CMD-s"} (fancy-errors (:save-status @state/ui))])

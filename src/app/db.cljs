@@ -106,7 +106,7 @@
           (swap! ui merge {:save-status "Saving..."})
           (<? (if (:id @doc) (save-version) (save-new)))
           (swap! ui assoc-in [:save-status] "Save")
-          (.setToken routes/history (str "/" (:id @state/doc))))
+          (.setToken state/history (str "/" (:id @state/doc))))
         (catch js/Error e
           (swap! ui merge {:save-status (js/Error "Error saving")})
           (prn "save error" e))))))
