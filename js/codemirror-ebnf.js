@@ -3,7 +3,6 @@ CodeMirror.defineSimpleMode("ebnf", {
   {regex: /\(\*/, token: "comment", next: "comment"},
   {regex: /(.*?)(=|:|::=|=)/, sol: true, token: ["keyword", "operator"]},
   {regex: /([^\(]|\([^\*])/, token: null}
-
   ],
      // The multi-line comment state.
      comment: [
