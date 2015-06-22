@@ -23,6 +23,24 @@ args = (num | <whitespace> | sexp)+
   ; :start  ; <:rule-name>
 }")
 
+(def samples
+  {:doc {:username "mhuebert"
+         :title "Example"
+         :description "Build a parser in your browser! Read the [**Instaparse docs**](https://github.com/Engelberg/instaparse/blob/master/README.md) to get started.
+
+*—thanks to [instaparse](https://github.com/Engelberg/instaparse) + [instaparse-cljs](https://github.com/lbradstreet/instaparse-cljs)!*"
+         :owner nil}
+   :grammar "(* Sample grammar in ebnf notation *)
+
+Sentence = (word | comma | <space>)+ end
+word = #'\\w+'
+comma = ','
+space = #'\\s'
+end = '.' | '?' | '!' "
+   :sample "Hello, world!"
+   :options default-options
+   })
+
 (def sample-doc {:username "mhuebert"
             :title "Example"
             :description "Build a parser in your browser! Read the [**Instaparse docs**](https://github.com/Engelberg/instaparse/blob/master/README.md) to get started.
@@ -30,7 +48,7 @@ args = (num | <whitespace> | sexp)+
 *—thanks to [instaparse](https://github.com/Engelberg/instaparse) + [instaparse-cljs](https://github.com/lbradstreet/instaparse-cljs)!*"
             :owner nil})
 
-(def sample-version {
+(def sample-cells {
                     :grammar "(* Sample grammar in ebnf notation *)
 
 Sentence = (word | comma | <space>)+ end
@@ -43,8 +61,14 @@ end = '.' | '?' | '!' "
                     })
 
 (def loading-doc {})
-(def loading-version {:grammar "Patience := expectation+
+(def loading-cells {:grammar "Patience := expectation+
 expectation = '.'"
                       :sample "..."
                       :options default-options
                   })
+
+(def ui-defaults {:save-status "Save"
+                  :fork-status "Fork"
+                  :editors (sorted-map)
+                  :editor-focus nil
+                  :power false})

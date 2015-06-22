@@ -38,7 +38,7 @@
            (if md
              [:div (merge display-opts {:dangerouslySetInnerHTML {:__html (.toHTML js/markdown (or @a ""))}})]
              [:span display-opts @a])
-           (if-not (and (:only-power-edit options) (not @state/power))
+           (if-not (and (:only-power-edit options) (not (:power @state/ui)))
              (if (and owner (empty? @a))
                [:span " " [:a {:class "text-link" :on-click toggle-edit}
                            (:empty-text options)]]))]])))))

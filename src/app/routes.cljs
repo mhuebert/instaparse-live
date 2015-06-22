@@ -14,28 +14,28 @@
 
 (defroute "/" []
           (reset! state/doc data/sample-doc )
-          (reset! state/version data/sample-version))
+          (reset! state/cells data/sample-cells))
 
 (defn new-doc []
   (reset! state/doc {:title nil :description nil :owner (:uid @state/user) :username (get-in @state/user [:github :username])})
-  (reset! state/version data/sample-version)
+  (reset! state/cells data/sample-cells)
   (.setToken state/history "/new"))
 
 (defroute "/new" [] (new-doc))
 
 (defroute "/power" []
-          (reset! state/power true))
+          (swap! state/ui assoc :power true))
 
 (defroute doc-path "/:doc-id" [doc-id]
           (if (not= doc-id (:id @state/doc))
-            (do (reset! state/version data/loading-version)
+            (do (reset! state/cells data/loading-cells)
                 (reset! state/doc data/loading-doc)))
           (go (reset! state/doc (<! (db/get-doc doc-id))))
-          (go (reset! state/version (<! (db/get-version doc-id)))))
+          (go (reset! state/cells (<! (db/get-cells doc-id)))))
 
 (defroute version-path "/:doc-id/:version-id" [doc-id version-id]
           (go (reset! state/doc (<! (db/get-doc doc-id))))
-          (go (reset! state/version (<! (db/get-version doc-id version-id)))))
+          (go (reset! state/cells (<! (db/get-cells doc-id version-id)))))
 
 (defn dispatch
   ([] (dispatch (-> js/window .-location .-hash)))

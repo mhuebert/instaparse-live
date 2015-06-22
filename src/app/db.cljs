@@ -8,16 +8,14 @@
             [cljsjs.firebase :as F]
             [goog.events]
             [reagent.core :as r]
-            [app.state :as state :refer [doc user ui]]))
+            [app.state :as state :refer [user ui cells]]))
 
 
 ; todo:
-; - do not attempt save if user is not owner of doc - do not show the link
 ; - list docs for user
 ; - review security rules
-; - view/navigate versions of a doc
-; - title and description of a doc
-; - show username of doc creator
+
+
 
 (defonce ref (m/connect "http://instaparse-live.firebaseio.com/"))
 
@@ -55,12 +53,11 @@
 
 
 (defn save-new []
-
   (let [doc-ref (.push (m/get-in ref [:docs]))
         doc-id (.key doc-ref)
         new-doc (merge @state/doc {:owner    (:uid @user)
                                    :username (get-in @user [:github :username])
-                                   :parent   {:doc-id (:id @state/doc) :version-id (:id @state/version)}
+                                   :parent   {:doc-id (:id @state/doc) :version-id (:id @cells)}
                                    :id       doc-id})]
     (go?
       (<? (ma/reset!< doc-ref new-doc))
@@ -69,10 +66,10 @@
     (go?
       (let [version-id (<! (next-version-id doc-id))
             version-ref (m/get-in ref [:versions doc-id version-id])
-            version (merge @state/version {:id version-id})]
+            version (merge @cells {:id version-id})]
 
         (<? (ma/reset-with-priority!< version-ref version (.now js/Date)))
-        (reset! state/version version)))))
+        (reset! cells version)))))
 
 (defn fork []
   (if-not (= "Forking..." (:fork-status @ui))
@@ -90,13 +87,13 @@
   (go
     (<? (ma/reset!< (m/get-in ref [:docs (:id @state/doc)]) @state/doc)))
   (go?
-    (let [doc-id (:id @doc)
+    (let [doc-id (:id @state/doc)
           version-id (<? (next-version-id doc-id))
           version-ref (m/get-in ref [:versions doc-id version-id])
-          version (assoc @state/version :id version-id)]
+          version (assoc @cells :id version-id)]
 
       (<? (ma/reset-with-priority!< version-ref version (.now js/Date)))
-      (swap! state/version assoc :id version-id))))
+      (swap! cells assoc :id version-id))))
 
 (defn save []
   (if (and (signed-in?) (not= "Saving..." (:save-status @ui)))
@@ -104,7 +101,7 @@
       (try
         (do
           (swap! ui merge {:save-status "Saving..."})
-          (<? (if (:id @doc) (save-version) (save-new)))
+          (<? (if (:id @state/doc) (save-version) (save-new)))
           (swap! ui assoc-in [:save-status] "Save")
           (.setToken state/history (str "/" (:id @state/doc))))
         (catch js/Error e
@@ -119,12 +116,12 @@
 (defn get-doc [id]
   (go? (<? (get-in-ref [:docs id]))))
 
-(defn get-version
+(defn get-cells
   ([doc-id]
    (go?
       (let [version-id (str "v"
                              (or (<? (get-in-ref ["counters" doc-id])) 1))]
-        (<? (get-version doc-id version-id)))))
+        (<? (get-cells doc-id version-id)))))
   ([doc-id version-id]
    (go? (<? (get-in-ref [:versions doc-id version-id])))))
 

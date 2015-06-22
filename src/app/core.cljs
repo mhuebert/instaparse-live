@@ -5,7 +5,7 @@
     [app.routes :as routes]
     [app.keys :as keys]
     [app.compute :as compute]
-    [app.state :as state :refer [user doc]]
+    [app.state :as state :refer [user doc cell history]]
     [reagent.core :as r]
     [reagent.cursor :refer [cursor]]
     [re-com.core :refer [h-box v-box box gap line scroller border h-split v-split title flex-child-style p]]
@@ -28,7 +28,7 @@
       [:a {:class "button" :on-click db/save :title "CMD-s"} (fancy-errors (:save-status @state/ui))])
 
     [:span {:class (if-not (:id @doc) "hidden")}
-     [:strong [:a {:href (str "#/" (:id @doc) "/" (:id @state/version))} (:id @state/version)]]]]
+     [:strong [:a {:href (str "#/" (:id @doc) "/" (:id @state/cells))} (:id @state/cells)]]]]
 
    [:span {:class "right"}
     (condp = (:provider @user)
@@ -40,7 +40,7 @@
 
 (defn parsed-output []
   [:div
-   {:id "parsed-output"
+   {:id    "parsed-output"
     :style {:overflow-y "auto" :marginTop 30 :width "100%"}}
    @state/output])
 
@@ -58,7 +58,7 @@
                                                   :on-click toggle}
                                                  "Options"]
                                                 (if @show-options
-                                                  [:div [c/cm-editor (cursor [:options] state/version) {:mode "clojure" :style "background:white"}]])])})))
+                                                  [:div [c/cm-editor (cell :options) {:mode "clojure" :style "background:white"}]])])})))
 
 (defn description []
 
@@ -90,13 +90,13 @@
                 :initial-split "25"
                 :panel-1 [:div
                           {:style {:border "1px solid #C2C2C1" :flex 1 :display "flex"}}
-                          [c/cm-editor (cursor [:sample] state/version) {:theme "solarized light"}]]
+                          [c/cm-editor (cell :sample) {:theme "solarized light"}]]
                 :panel-2 [parsed-output]
                 ]]]
    :panel-2 [v-box
              :size "1"
              :style {:position "relative"}
-             :children [[c/cm-editor (cursor [:grammar] state/version) {:mode "ebnf"}]
+             :children [[c/cm-editor (cell :grammar) {:mode "ebnf"}]
                         [options]]]])
 
 

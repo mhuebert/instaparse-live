@@ -7,27 +7,23 @@
             [app.compute :as compute])
   (:import goog.History))
 
-#_(defonce cells (r/atom {}))
-#_(defn cell
-  ([label] (label @cells))
-  ([label value] (swap! cells assoc label value)))
-
-(defonce user (r/atom {}))
-
-(defonce ui (r/atom {:save-status "Save"
-                     :fork-status "Fork"
-                     :editors (sorted-map)
-                     :editor-focus nil
+(defonce db (r/atom {:cells data/sample-cells
+                     :doc data/sample-doc
+                     :user {}
+                     :ui data/ui-defaults
                      }))
 
-(defonce doc (r/atom data/sample-doc))
-(defonce version (r/atom data/sample-version))
+(def cells (cursor [:cells] db))
+(def doc (cursor [:doc] db))
+(def user (cursor [:user] db))
+(def ui (cursor [:ui] db))
+
+(defn cell [label] (cursor [label] cells))
+(defn cell! [label value]
+  (swap! cells assoc label value))
 
 (defonce output
          (reaction
-           (compute/parse @version)))
-
-(defonce power (r/atom false))
+           (compute/parse @cells)))
 
 (defonce history (History.))
-
