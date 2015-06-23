@@ -1,6 +1,5 @@
 (ns app.keys
   (:require  [goog.ui.KeyboardShortcutHandler]
-             [app.db :as db]
              [goog.events]))
 
 (defonce handler (new goog.ui.KeyboardShortcutHandler js/document))
@@ -11,16 +10,16 @@
         func (get @actions id)]
     (if func (func))))
 
-(defn register [shortcut func]
-  (let [label (str (rand-int 99999))]
-    (.registerShortcut handler label shortcut)
-    (swap! actions assoc label func)))
 
 (defn unregister [shortcut]
   (.unregisterShortcut handler shortcut))
 
+(defn register [shortcut func]
+  (unregister shortcut)
+  (let [label (str (rand-int 99999))]
+    (.registerShortcut handler label shortcut)
+    (swap! actions assoc label func)))
+
 (defonce _
-         (do
-           (register "alt+tab" app.components/editor-jump)
-           (register "meta+s" db/save)
-           (goog.events/listen handler goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED key-event)))
+         (goog.events/listen handler goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED key-event))
+

@@ -3,6 +3,7 @@
                         [reagent.cursor :refer [cursor]]
                         [app.state :as state]
                         [app.db :as db]
+                        [app.keys :as keys]
                         [app.util :as util]))
 
 (defn editable-text
@@ -24,23 +25,23 @@
        (let [input-options {:id input-id :on-change handle-change :on-blur toggle-edit :value @a}
              md (:markdown options)
              owner (= (:uid @state/user) (:owner @state/doc))
-             display-opts {:class (str (if owner "as-owner"))
+             display-opts {:class-name (str (if owner "as-owner"))
                            :on-click (if owner toggle-edit #())
                            }]
          [:span
-          {:class "editable-text"
+          {:class-name "editable-text"
            :style {:display (if (:markdown options) "block" "inline")}}
-          [:span {:class (if @editing "" "hidden")}
+          [:span {:class-name (if @editing "" "hidden")}
            (if (:markdown options)
              [:textarea input-options]
              [:input (merge input-options (:input options))])]
-          [:span { :class (if @editing "hidden" "")}
+          [:span { :class-name (if @editing "hidden" "")}
            (if md
              [:div (merge display-opts {:dangerouslySetInnerHTML {:__html (.toHTML js/markdown (or @a ""))}})]
              [:span display-opts @a])
            (if-not (and (:only-power-edit options) (not (:power @state/ui)))
              (if (and owner (empty? @a))
-               [:span " " [:a {:class "text-link" :on-click toggle-edit}
+               [:span " " [:a {:class-name "text-link" :on-click toggle-edit}
                            (:empty-text options)]]))]])))))
 
 (def cm-defaults {
@@ -51,13 +52,18 @@
                   :theme "solarized dark"
                   :mode "javascript"})
 
+(defn cm-instance [editor] (-> editor r/state-atom deref :editor))
+
 (defn editor-jump []
   (let [{:keys [editors editor-focus]} @state/ui
-        editor (or (last (first (subseq editors > editor-focus))) (last (first editors)))]
+        editor (cm-instance (or (last (first (subseq editors > editor-focus))) (last (first editors))))]
     (.focus editor)))
 
+(keys/register "alt+tab" editor-jump)
+
+
 (defn focus-last-editor []
-  (js/setTimeout #(.focus (last (last (:editors @state/ui)))) 15))
+  (js/setTimeout #(-> @state/ui :editors last last cm-instance .focus) 15))
 
 (defn cm-editor
   ([a] (cm-editor a {}))
@@ -72,15 +78,16 @@
                                        editor (.fromTextArea js/CodeMirror node config)
                                        val (or @a "")
                                        id (or (:name options) (.now js/Date))]
-                                  (swap! ui-editors merge {id editor})
-                                  (r/set-state % {:editor editor :id id})
+                                  (swap! ui-editors merge {id %})
+                                  (r/set-state % {:editor editor :id id :a a})
                                   (.setValue editor val)
-                                  (add-watch a nil (fn [_ _ _ new-state]
+                                  #_(add-watch a nil (fn [_ _ _ new-state]
                                                      (if (not= new-state (.getValue editor))
                                                        (.setValue editor (or new-state "")))))
                                   (.on editor "change" (fn [_]
-                                                         (let [value (.getValue editor)]
-                                                           (reset! a value))))
+                                                         (if (:auto-update @state/options)
+                                                           (let [value (.getValue editor)]
+                                                             (reset! a value)))))
                                   (.on editor "focus" (fn [_] (reset! ui-editor-focus id))))
 
         :component-will-unmount (fn [x]
@@ -90,6 +97,6 @@
 
 
         :display-name           "CodeMirror Component"
-        :render         (fn []
-                          [:textarea {:style {:width "100%" :height "100%" :display "flex" :background "red" :flex 1}}])
+        :render                 (fn []
+                                  [:textarea {:style {:width "100%" :height "100%" :display "flex" :background "red" :flex 1}}])
         }))))

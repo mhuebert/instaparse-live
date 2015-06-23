@@ -21,16 +21,20 @@
 (defn header []
   [:div
    {:id "header"}
-   [:span {:class "left"}
-    [:a {:class "button" :on-click routes/new-doc} "New"]
-    [:a {:class "button" :on-click db/fork} (fancy-errors (:fork-status @state/ui))]
+   [:span {:class-name "left"}
+    [:a {:class-name "button" :on-click routes/new-doc} "New"]
+    [:a {:class-name "button" :on-click db/fork} (fancy-errors (:fork-status @state/ui))]
     (if (and (:uid @state/user) (= (:owner @state/doc) (:uid @state/user)))
-      [:a {:class "button" :on-click db/save :title "CMD-s"} (fancy-errors (:save-status @state/ui))])
+      [:a {:class-name "button" :on-click db/save :title "CMD-s"} (fancy-errors (:save-status @state/ui))])
 
-    [:span {:class (if-not (:id @doc) "hidden")}
-     [:strong [:a {:href (str "#/" (:id @doc) "/" (:id @state/cells))} (:id @state/cells)]]]]
+    [:span {:class-name (str "button" (if-not (:id @doc) "hidden"))}
+     [:strong [:a {:href (str "#/" (:id @doc) "/" (:id @state/cells))} (:id @state/cells)]]]
+    (if-not (:auto-update @state/options) [:span  {:class-name "button"
+                                                   :on-click state/update-cells
+                                                   :style {:background "#0B749F" :font-size "13px" :padding "2px 4px" :color "white"}}
+                                           "refresh (ctrl+r)"])]
 
-   [:span {:class "right"}
+   [:span {:class-name "right"}
     (condp = (:provider @user)
       "github" [:span [:a {:style {:cursor "pointer" :color "#777"} :on-click db/sign-out} "Log out"]
                 " "
@@ -51,9 +55,9 @@
                      :component-did-mount    (fn [] (keys/register "ctrl+o" (fn [] (toggle) (c/focus-last-editor))))
                      :component-will-unmount (fn [] (keys/unregister "ctrl+o"))
                      :render                 (fn []
-                                               [:div {:class "options"}
+                                               [:div {:class-name "options"}
                                                 [:div
-                                                 {:class    "button"
+                                                 {:class-name    "button"
                                                   :style    {:text-align "center"}
                                                   :on-click toggle}
                                                  "Options"]

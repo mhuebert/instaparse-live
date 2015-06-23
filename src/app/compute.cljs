@@ -17,9 +17,9 @@
 
 (defn- vec->element [v]
   [:div
-   {:class (str "parse-tag t-" (name (first v)))}
+   {:class-name (str "parse-tag t-" (name (first v)))}
    [:span
-    {:class "tag-name"}
+    {:class-name "tag-name"}
     (str (first v) " ")] (rest v)])
 
 (defn- visualized-result [result]
@@ -28,7 +28,7 @@
                  (fn [x]
                    (if (vector? x) (vec->element x) x))
                  result)]
-    [:div {:class "parse-output"} (interpose [:div {:class "parse-sep"}] result)]))
+    [:div {:class-name "parse-output"} (interpose [:div {:class-name "parse-sep"}] result)]))
 
 (defn parse
   ([grammar sample options] (parse {:grammar grammar :sample sample :options options}))

@@ -14,13 +14,15 @@ args = (num | <whitespace> | sexp)+
 
 (def default-options "{
   :max-parses 20
-  ; :string-ci true
-  ; :partial false
-  ; :total false
-  ; :input-format  :abnf; [:ebnf]
-  ; :output-format :hiccup ; [:enlive]
-  ; :unhide ; [:content, :tags, :all]
-  ; :start  ; <:rule-name>
+  :auto-update true ; when false, ctrl+r to refresh
+  :input-format :ebnf ;abnf
+  :string-ci false
+  ; :partial true/false
+  ; :total true/false
+  ; :output-format [:hiccup :enlive]
+  ; :unhide ; [:content :tags :all]
+  ; :start  ; :rule-name
+
 }")
 
 
@@ -54,5 +56,6 @@ expectation = '.'"
 (def ui-defaults {:save-status "Save"
                   :fork-status "Fork"
                   :editors (sorted-map)
+                  :editors2 (sorted-map)
                   :editor-focus nil
                   :power false})

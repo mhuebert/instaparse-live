@@ -8,14 +8,13 @@
             [cljsjs.firebase :as F]
             [goog.events]
             [reagent.core :as r]
+            [app.keys :as keys]
             [app.state :as state :refer [user ui cells]]))
 
 
 ; todo:
 ; - list docs for user
 ; - review security rules
-
-
 
 (defonce ref (m/connect "http://instaparse-live.firebaseio.com/"))
 
@@ -72,6 +71,7 @@
         (reset! cells version)))))
 
 (defn fork []
+  (state/update-cells)
   (if-not (= "Forking..." (:fork-status @ui))
     (go
       (swap! ui merge {:fork-status "Forking..."})
@@ -96,6 +96,7 @@
       (swap! cells assoc :id version-id))))
 
 (defn save []
+  (state/update-cells)
   (if (and (signed-in?) (not= "Saving..." (:save-status @ui)))
     (go
       (try
@@ -107,6 +108,8 @@
         (catch js/Error e
           (swap! ui merge {:save-status (js/Error "Error saving")})
           (prn "save error" e))))))
+
+(keys/register "meta+s" save)
 
 (defn get-in-ref [path]
   (go

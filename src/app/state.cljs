@@ -4,8 +4,9 @@
   (:require [reagent.core :as r]
             [reagent.cursor :refer [cursor]]
             [app.data :as data]
-            [goog.ui.KeyboardShortcutHandler]
-            [app.compute :as compute])
+            [app.keys :as keys]
+            [app.compute :as compute]
+            [cljs.reader :refer [read-string]])
   (:import goog.History))
 
 (defonce db (r/atom {:cells data/sample-cells
@@ -23,8 +24,21 @@
 (defn cell [label]
   (cursor [label] cells))
 
+(def options
+  (reaction
+    (let [new-options @(cell :options)]
+      (try (read-string new-options)
+           (catch js/Error e
+             data/default-options)))))
 
 (defonce output
-         (reaction
-           (compute/parse @cells)))
+         (reaction (compute/parse @cells)))
 
+(keys/register "ctrl+p" (fn [] (reset! output (compute/parse @cells))))
+
+(defn update-cells []
+  (doseq [{:keys [editor a]} (map #(-> % last r/state-atom deref) (:editors @ui))]
+    (let [new-val (.getValue editor)]
+      (.setTimeout js/window #(reset! a new-val) 10))))
+
+(keys/register "ctrl+r" update-cells)
