@@ -1,7 +1,7 @@
 (ns app.compute
   (:require [instaparse.core :as insta]
             [fipp.edn :refer [pprint]]
-            [clojure.walk :refer [postwalk]]
+            [clojure.walk :refer [prewalk postwalk]]
             [app.util :as util]
             [cljs.reader :refer [read-string]]))
 
@@ -23,7 +23,8 @@
     (str (first v) " ")] (rest v)])
 
 (defn- visualized-result [result]
-  (let [result (postwalk
+  (let [#_result #_(prewalk #(if (instaparse.auto-flatten-seq/afs? %)  (seq %) %) result)
+        result (postwalk
                  (fn [x]
                    (if (vector? x) (vec->element x) x))
                  result)]
