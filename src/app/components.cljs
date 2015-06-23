@@ -2,8 +2,12 @@
   (:require             [reagent.core :as r]
                         [reagent.cursor :refer [cursor]]
                         [app.state :as state]
-                        [app.db :as db]
-                        [app.util :as util]))
+                        [app.db :as db]))
+
+(defn focus [id]
+  (.setTimeout js/window
+               (fn []
+                 (.focus (.getElementById js/document id))) 20))
 
 (defn editable-text
   ([a] (editable-text a {}))
@@ -17,30 +21,30 @@
          editing (r/atom false)
          toggle-edit (fn []
                        (reset! editing (not @editing))
-                       (util/focus input-id)
+                       (focus input-id)
                        (if-not @editing (db/save))
                        )]
      (fn []
        (let [input-options {:id input-id :on-change handle-change :on-blur toggle-edit :value @a}
              md (:markdown options)
              owner (= (:uid @state/user) (:owner @state/doc))
-             display-opts {:class (str (if owner "as-owner"))
+             display-opts {:class-name (str (if owner "as-owner"))
                            :on-click (if owner toggle-edit #())
                            }]
          [:span
-          {:class "editable-text"
+          {:class-name "editable-text"
            :style {:display (if (:markdown options) "block" "inline")}}
-          [:span {:class (if @editing "" "hidden")}
+          [:span {:class-name (if @editing "" "hidden")}
            (if (:markdown options)
              [:textarea input-options]
              [:input (merge input-options (:input options))])]
-          [:span { :class (if @editing "hidden" "")}
+          [:span { :class-name (if @editing "hidden" "")}
            (if md
              [:div (merge display-opts {:dangerouslySetInnerHTML {:__html (.toHTML js/markdown (or @a ""))}})]
              [:span display-opts @a])
            (if-not (and (:only-power-edit options) (not (:power @state/ui)))
              (if (and owner (empty? @a))
-               [:span " " [:a {:class "text-link" :on-click toggle-edit}
+               [:span " " [:a {:class-name "text-link" :on-click toggle-edit}
                            (:empty-text options)]]))]])))))
 
 (def cm-defaults {

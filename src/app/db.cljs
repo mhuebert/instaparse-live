@@ -17,6 +17,7 @@
 
 
 
+
 (defonce ref (m/connect "http://instaparse-live.firebaseio.com/"))
 
 (defonce _
@@ -32,8 +33,8 @@
 (defn sign-in-github []
   (.authWithOAuthPopup ref "github"
                        (fn [error auth-data]
-                         (if error (prn (js/Error error))
-                                   (prn auth-data)))))
+                         (if error (.log js/console (js/Error error))
+                                   (.log js/console auth-data)))))
 
 (defn signed-in? []
   (if (:uid @user) true false))

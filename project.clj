@@ -15,7 +15,10 @@
                  [re-com "0.5.4"]
                  [fipp "0.6.2"]
                  [cljsjs/firebase "2.2.3-0"]
-                 [matchbox "0.0.6"]]
+                 [matchbox "0.0.6"]
+                 [com.cognitect/transit-cljs "0.8.220"]
+                 [servant "0.1.3"]]
+
 
 
   :plugins [[lein-cljsbuild "1.0.6"]
@@ -26,24 +29,32 @@
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
   
   :cljsbuild {
-    :builds [{:id "dev"
-              :source-paths ["src"]
+              :builds [{:id           "dev"
+                        :source-paths ["src"]
 
-              :figwheel { :on-jsload "app.core/on-js-reload" }
+                        :figwheel     {:on-jsload "app.core/on-js-reload"}
 
-              :compiler {:main app.core
-                         :asset-path "js/compiled/out"
-                         :output-to "resources/public/js/compiled/app.js"
-                         :output-dir "resources/public/js/compiled/out"
-                         :source-map-timestamp true }}
-             {:id "min"
-              :source-paths ["src"]
-              :compiler {:output-to "resources/public/js/compiled/app.js"
-                         :main app.core
-                         :optimizations :advanced
-                         :pretty-print false
-                         :externs ["resources/private/js/codemirror-externs.js"]
-                         }}]}
+                        :compiler     {:main                 app.core
+                                       :asset-path           "js/compiled/out"
+                                       :output-to            "resources/public/js/compiled/app.js"
+                                       :output-dir           "resources/public/js/compiled/out"
+                                       :source-map-timestamp true}}
+                       {:id           "min"
+                        :source-paths ["src"]
+                        :compiler     {:output-to     "resources/public/js/compiled/app.js"
+                                       :main          app.core
+                                       :optimizations :advanced
+                                       :pretty-print  false
+                                       :externs       ["resources/private/js/codemirror-externs.js"]
+                                       }}
+                       {:id           "compute"
+                        :source-paths ["src/worker"]
+                        :compiler     {:output-to "resources/public/js/compute.js"
+                                       :main          compute.core
+                                       :optimizations :advanced
+                                       :pretty-print  false
+                                       }}
+                       ]}
 
   :figwheel {
              ;; :http-server-root "public" ;; default and assumes "resources" 
