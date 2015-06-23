@@ -1,10 +1,9 @@
-(ns app.components
-  (:require             [reagent.core :as r]
-                        [reagent.cursor :refer [cursor]]
-                        [app.state :as state]
-                        [app.db :as db]
-                        [app.keys :as keys]
-                        [app.util :as util]))
+(ns app.editors
+  (:require [reagent.core :as r]
+            [reagent.cursor :refer [cursor]]
+            [app.state :as state]
+            [app.dispatch :refer [dispatch]]
+            [cljsjs.markdown]))
 
 (defn editable-text
   ([a] (editable-text a {}))
@@ -18,8 +17,8 @@
          editing (r/atom false)
          toggle-edit (fn []
                        (reset! editing (not @editing))
-                       (util/focus input-id)
-                       (if-not @editing (db/save))
+                       (dispatch [:focus input-id])
+                       (if-not @editing (dispatch [:save!]))
                        )]
      (fn []
        (let [input-options {:id input-id :on-change handle-change :on-blur toggle-edit :value @a}
@@ -51,19 +50,6 @@
                   #_:scrollbarStyle #_"null"
                   :theme "solarized dark"
                   :mode "javascript"})
-
-(defn cm-instance [editor] (-> editor r/state-atom deref :editor))
-
-(defn editor-jump []
-  (let [{:keys [editors editor-focus]} @state/ui
-        editor (cm-instance (or (last (first (subseq editors > editor-focus))) (last (first editors))))]
-    (.focus editor)))
-
-(keys/register "alt+tab" editor-jump)
-
-
-(defn focus-last-editor []
-  (js/setTimeout #(-> @state/ui :editors last last cm-instance .focus) 15))
 
 (defn cm-editor
   ([a] (cm-editor a {}))
@@ -100,3 +86,4 @@
         :render                 (fn []
                                   [:textarea {:style {:width "100%" :height "100%" :display "flex" :background "red" :flex 1}}])
         }))))
+

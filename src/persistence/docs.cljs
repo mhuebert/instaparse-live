@@ -1,45 +1,20 @@
-(ns app.db
+(ns persistence.docs
   (:require-macros
     [cljs.core.async.macros :refer [go]]
     [app.macros :refer [<? go?]])
-  (:require [matchbox.core :as m]
+  (:require [persistence.core :refer [ref get-in-ref]]
+            [persistence.auth :as auth]
+            [matchbox.core :as m]
             [matchbox.async :as ma]
             [cljs.core.async :refer [<! put! chan]]
-            [cljsjs.firebase :as F]
-            [goog.events]
-            [reagent.core :as r]
-            [app.keys :as keys]
-            [app.state :as state :refer [user ui cells]]))
-
+            [cljsjs.firebase]
+            [app.state :as state :refer [user ui cells]]
+            [app.util]
+            [app.data :as data]))
 
 ; todo:
 ; - list docs for user
 ; - review security rules
-
-(defonce ref (m/connect "http://instaparse-live.firebaseio.com/"))
-
-(defonce _
-         (do
-           (.onAuth ref
-                    (fn [auth-data]
-                      (js->clj auth-data)
-                      (reset! user (js->clj auth-data :keywordize-keys true))))))
-
-(defn sign-in-anon []
-  (if-not (.getAuth ref) (.authAnonymously ref #())))
-
-(defn sign-in-github []
-  (.authWithOAuthPopup ref "github"
-                       (fn [error auth-data]
-                         (if error (prn (js/Error error))
-                                   (prn auth-data)))))
-
-(defn signed-in? []
-  (if (:uid @user) true false))
-
-(defn sign-out []
-  (reset! user {})
-  (.unauth ref))
 
 (defn next-version-id [doc-id]
   (let [counter-ref (m/get-in ref [:counters doc-id])
@@ -70,8 +45,12 @@
         (<? (ma/reset-with-priority!< version-ref version (.now js/Date)))
         (reset! cells version)))))
 
+(defn new []
+  (reset! state/doc {:title nil :description nil :owner (:uid @state/user) :username (get-in @state/user [:github :username])})
+  (reset! state/cells data/cells-sample)
+  (.setToken state/history "/new"))
+
 (defn fork []
-  (state/update-cells)
   (if-not (= "Forking..." (:fork-status @ui))
     (go
       (swap! ui merge {:fork-status "Forking..."})
@@ -96,8 +75,7 @@
       (swap! cells assoc :id version-id))))
 
 (defn save []
-  (state/update-cells)
-  (if (and (signed-in?) (not= "Saving..." (:save-status @ui)))
+  (if (and (auth/signed-in?) (not= "Saving..." (:save-status @ui)))
     (go
       (try
         (do
@@ -109,22 +87,29 @@
           (swap! ui merge {:save-status (js/Error "Error saving")})
           (prn "save error" e))))))
 
-(keys/register "meta+s" save)
-
-(defn get-in-ref [path]
-  (go
-    (let [item-ref (m/get-in ref path)]
-      (<! (ma/deref< item-ref)))))
-
 (defn get-doc [id]
   (go? (<? (get-in-ref [:docs id]))))
 
-(defn get-cells
+(defn get-version
   ([doc-id]
    (go?
       (let [version-id (str "v"
                              (or (<? (get-in-ref ["counters" doc-id])) 1))]
-        (<? (get-cells doc-id version-id)))))
+        (<? (get-version doc-id version-id)))))
   ([doc-id version-id]
    (go? (<? (get-in-ref [:versions doc-id version-id])))))
 
+(defn view-doc [doc-id]
+  (if (not= doc-id (:id @state/doc))
+    (do (reset! state/cells data/cells-loading)
+        (reset! state/doc data/doc-loading)))
+  (go (reset! state/doc (<! (get-doc doc-id))))
+  (go (reset! state/cells (<! (get-version doc-id)))))
+
+(defn view-doc-version [doc-id version-id]
+  (go (reset! state/doc (<! (get-doc doc-id))))
+  (go (reset! state/cells (<! (get-version doc-id version-id)))))
+
+(defn show-sample []
+  (swap! state/db merge {:doc   data/doc-sample
+                         :cells data/cells-sample}))

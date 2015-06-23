@@ -2,10 +2,20 @@
   (:require [instaparse.core :as insta]
             [fipp.edn :refer [pprint]]
             [clojure.walk :refer [prewalk postwalk]]
-            [app.util :as util]
             [cljs.reader :refer [read-string]]))
 
-(defonce memoized-parser (util/memoize-last-val insta/parser))
+
+(defn memoize-last-val [f]
+  (let [last-args (atom {})
+        last-val (atom {})]
+    (fn [& args]
+      (if (= @last-args args) @last-val
+                              (do
+                                (reset! last-args args)
+                                (reset! last-val (apply f args))
+                                @last-val)))))
+
+(defonce memoized-parser (memoize-last-val insta/parser))
 
 (defn- string-result
   [result & {:keys [error]}]
@@ -23,8 +33,7 @@
     (str (first v) " ")] (rest v)])
 
 (defn- visualized-result [result]
-  (let [#_result #_(prewalk #(if (instaparse.auto-flatten-seq/afs? %)  (seq %) %) result)
-        result (postwalk
+  (let [result (postwalk
                  (fn [x]
                    (if (vector? x) (vec->element x) x))
                  result)]
@@ -33,7 +42,7 @@
 (defn parse
   ([grammar sample options] (parse {:grammar grammar :sample sample :options options}))
   ([{:keys [grammar sample options]}]
-             (try
+   (try
                (let [options (read-string options)
                      parser (apply memoized-parser
                                    (apply concat [grammar] (seq (select-keys options [:input-format :output-format :string-ci]))))

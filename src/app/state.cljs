@@ -4,15 +4,14 @@
   (:require [reagent.core :as r]
             [reagent.cursor :refer [cursor]]
             [app.data :as data]
-            [app.keys :as keys]
             [app.compute :as compute]
             [cljs.reader :refer [read-string]])
   (:import goog.History))
 
-(defonce db (r/atom {:cells data/sample-cells
-                     :doc data/sample-doc
-                     :user {}
-                     :ui data/ui-defaults
+(defonce db (r/atom {:cells data/cells-sample
+                     :doc   data/doc-sample
+                     :user  {}
+                     :ui    data/ui-defaults
                      }))
 
 (def cells (cursor [:cells] db))
@@ -29,16 +28,8 @@
     (let [new-options @(cell :options)]
       (try (read-string new-options)
            (catch js/Error e
-             data/default-options)))))
+             data/option-defaults)))))
 
 (defonce output
          (reaction (compute/parse @cells)))
 
-(keys/register "ctrl+p" (fn [] (reset! output (compute/parse @cells))))
-
-(defn update-cells []
-  (doseq [{:keys [editor a]} (map #(-> % last r/state-atom deref) (:editors @ui))]
-    (let [new-val (.getValue editor)]
-      (.setTimeout js/window #(reset! a new-val) 10))))
-
-(keys/register "ctrl+r" update-cells)
