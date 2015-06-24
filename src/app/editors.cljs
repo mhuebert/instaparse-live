@@ -67,7 +67,7 @@
                                   (swap! ui-editors merge {id %})
                                   (r/set-state % {:editor editor :id id :a a})
                                   (.setValue editor val)
-                                  #_(add-watch a nil (fn [_ _ _ new-state]
+                                  (add-watch a nil (fn [_ _ _ new-state]
                                                      (if (not= new-state (.getValue editor))
                                                        (.setValue editor (or new-state "")))))
                                   (.on editor "change" (fn [_]

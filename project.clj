@@ -7,7 +7,7 @@
   :dependencies [[org.clojure/clojure "1.7.0-RC1"]
                  [org.clojure/clojurescript "0.0-3308"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
-                 [com.lucasbradstreet/instaparse-cljs "1.4.0.0-SNAPSHOT"]
+                 [com.lucasbradstreet/instaparse-cljs "1.4.1.0-SNAPSHOT"]
                  [secretary "1.2.3"]
                  [reagent "0.5.0"]
                  [reagent/reagent-cursor "0.1.2"]

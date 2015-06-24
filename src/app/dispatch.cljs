@@ -5,7 +5,6 @@
 
 
 (defn dispatch [[action & args]]
-
   (condp = action
 
     :new! (docs/new)

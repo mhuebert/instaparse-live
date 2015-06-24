@@ -1,5 +1,6 @@
 (ns ^:figwheel-always app.core
   (:require
+    [app.routes]
     [reagent.core :as r]
     [app.layout :as layout]))
 
