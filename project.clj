@@ -28,7 +28,7 @@
   :cljsbuild {
     :builds [{:id "dev"
               :source-paths ["src"]
-
+              :figwheel {:css-dirs ["resources/public/css"]}
               :compiler {:main app.core
                          :asset-path "js/compiled/out"
                          :output-to "resources/public/js/compiled/app.js"
