@@ -26,11 +26,12 @@
    result])
 
 (defn- vec->element [v]
-  [:div
-   {:class-name (str "parse-tag t-" (name (first v)))}
-   [:span
-    {:class-name "tag-name"}
-    (str (first v) " ")] (rest v)])
+  (into [:div
+         {:class-name (str "parse-tag t-" (name (first v)))}
+         [:span
+          {:class-name "tag-name"}
+          (str (first v) " ")]]
+        (rest v)))
 
 (defn- visualized-result [result]
   (let [result (postwalk
@@ -58,3 +59,4 @@
                  (.log js/console e)
                  (let [message (if (string? e) e (str e))]
                    (string-result message :error true))))))
+

@@ -4,16 +4,15 @@
     [app.editors :refer [editable-text cm-editor]]
     [app.keys :as keys]
     [app.state :as state :refer [user doc cell]]
-    [reagent.core :as r]
-    [reagent.cursor :refer [cursor]]
+    [reagent.core :as r :refer [cursor]]
     [re-com.core :refer [h-box v-box box gap line scroller border h-split v-split title flex-child-style p]]
     [re-com.splits :refer [hv-split-args-desc]]
+    [fipp.edn :refer [pprint]]
     ))
 
 
 (defn fancy-errors [body]
   (if (instance? js/Error body) [:span {:style {:color "white" :background "red" :padding "2px 4px"}} (.-message body)] body))
-
 
 (defn header []
   [:div
@@ -25,26 +24,28 @@
       [:a {:class-name "button" :on-click #(dispatch [:save!]) :title "CMD-s"}
        (fancy-errors (:save-status @state/ui))])
 
-    [:span {:class-name (str "button" (if-not (:id @doc) "hidden"))}
-     [:strong [:a {:href (str "#/" (:id @doc) "/" (:id @state/cells))} (:id @state/cells)]]]
+    [:span {:class-name (str "button" (if-not (:id @state/doc) "hidden"))}
+     [:strong [:a {:href (str "#/" (:id @state/doc) "/" (:id @state/cells))} (:id @state/cells)]]]
     (if-not (:auto-update @state/options) [:span  {:class-name "button"
                                                    :on-click   #(dispatch [:refresh-editor-state])
                                                    :style      {:background "#0B749F" :font-size "13px" :padding "2px 4px" :color "white"}}
                                            "refresh (ctrl+r)"])]
 
    [:span {:class-name "right"}
-    (condp = (:provider @user)
+    (condp = (:provider @state/user)
       "github" [:span [:a {:style {:cursor "pointer" :color "#777"} :on-click #(dispatch [:sign-out])} "Log out"]
                 " "
-                [:a {:href (str "https://www.github.com/" (get-in @user [:github :username]))} (get-in @user [:github :displayName])]]
+                [:a {:href (str "https://www.github.com/" (get-in @user [:github :username]))} (get-in @state/user [:github :displayName])]]
       "anonymous" [:a {:on-click #(dispatch [:sign-in-github]) :style {:cursor "pointer"}} "Sign In with Github"]
       nil "authenticating...")]])
 
 (defn parsed-output []
-  [:div
-   {:id    "parsed-output"
-    :style {:overflow-y "auto" :marginTop 30 :width "100%"}}
-   @state/output])
+  (fn []
+    [:div
+     {:id    "parsed-output"
+      :style {:overflow-y "auto" :marginTop 30 :width "100%"}}
+     @state/output
+     [:div {:style {:white-space "pre-wrap"}} (with-out-str (pprint @state/cells))]]))
 
 (defn options []
   (let [show-options (r/atom false)
@@ -63,15 +64,14 @@
                                                   [:div [cm-editor (cell :options) {:mode "clojure" :style "background:white"}]])])})))
 
 (defn description []
-
   (fn []
     (let [owner (= (:owner @state/doc) (:uid @state/user))]
       [:div {:style {:margin "15px 10%" :overflow-y "auto"}}
        [:a {:href (str "https://www.github.com/" (:username @state/doc))} (:username @state/doc)]
        (if (and (:username @state/doc) (or owner (:title @state/doc))) " / ")
-       [:strong [editable-text (cursor [:title] state/doc) {:empty-text "title"
+       [:strong [editable-text (cursor state/doc [:title] ) {:empty-text "title"
                                                               :input      {:style {:width "350px"}}}]]
-       [editable-text (cursor [:description] state/doc) {:empty-text "description"
+       [editable-text (cursor state/doc [:description] ) {:empty-text "description"
                                                            :edit-text  "edit description"
                                                            :markdown   true
                                                            :only-power-edit true}]
@@ -107,4 +107,3 @@
    :height "100%"
    :children [[header]
               [editor]]])
-

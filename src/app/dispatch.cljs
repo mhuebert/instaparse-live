@@ -13,7 +13,6 @@
     :fork! (do (ui/refresh-editor-state)
                (docs/fork))
 
-
     :view-doc (apply docs/view-doc args)
     :view-doc-version (apply docs/view-doc-version args)
     :view-sample (docs/show-sample)
@@ -22,7 +21,6 @@
     :sign-in-github (auth/sign-in-github)
     :sign-in-anon (auth/sign-in-anon)
 
-
     :enter-power-mode (ui/power-mode)
     :refresh-editor-state (ui/refresh-editor-state)
     :editor-jump (ui/editor-jump)
@@ -30,3 +28,4 @@
     :focus (apply ui/focus args)
 
     ))
+

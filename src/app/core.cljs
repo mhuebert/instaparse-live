@@ -6,4 +6,6 @@
 
 (enable-console-print!)
 
-(r/render-component [layout/app] (.getElementById js/document "app"))
+(defn ^:export init []
+  (r/render-component [layout/app] (.getElementById js/document "app")))
+

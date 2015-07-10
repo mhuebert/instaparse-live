@@ -1,6 +1,5 @@
 (ns app.editors
-  (:require [reagent.core :as r]
-            [reagent.cursor :refer [cursor]]
+  (:require [reagent.core :as r :refer [cursor]]
             [app.state :as state]
             [app.dispatch :refer [dispatch]]
             [cljsjs.markdown]))
@@ -54,8 +53,8 @@
 (defn cm-editor
   ([a] (cm-editor a {}))
   ([a options]
-   (let [ui-editors (cursor [:editors] state/ui)
-         ui-editor-focus (cursor [:editor-focus] state/ui)]
+   (let [ui-editors (cursor state/ui [:editors])
+         ui-editor-focus (cursor state/ui [:editor-focus] )]
 
      (r/create-class
        {

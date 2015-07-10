@@ -20,7 +20,11 @@
   ; :start  ; :rule-name
 }")
 
+;('editable {})
 
+;{... editable : true}
+
+;get-in cell, cond on key
 
 (def doc-sample {:username "mhuebert"
                  :title "Example"
