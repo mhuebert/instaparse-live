@@ -5,6 +5,7 @@
 
 
 (defn dispatch [[action & args]]
+
   (condp = action
 
     :new! (docs/new)
@@ -15,7 +16,7 @@
 
     :view-doc (apply docs/view-doc args)
     :view-doc-version (apply docs/view-doc-version args)
-    :view-sample (docs/show-sample)
+    :view-sample (docs/view-sample)
 
     :sign-out (auth/sign-out)
     :sign-in-github (auth/sign-in-github)
@@ -25,7 +26,5 @@
     :refresh-editor-state (ui/refresh-editor-state)
     :editor-jump (ui/editor-jump)
     :focus-last-editor (ui/focus-last-editor)
-    :focus (apply ui/focus args)
-
-    ))
+    :focus (apply ui/focus args)))
 

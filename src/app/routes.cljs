@@ -19,7 +19,7 @@
           (dispatch [:view-doc doc-id]))
 
 (defroute version-path "/:doc-id/:version-id" [doc-id version-id]
-          (dispatch [:view-version doc-id version-id]))
+          (dispatch [:view-doc-version doc-id version-id]))
 
 (defn dispatch-route
   ([] (dispatch-route (-> js/window .-location .-hash)))

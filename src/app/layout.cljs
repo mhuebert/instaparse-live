@@ -1,9 +1,10 @@
 (ns app.layout
   (:require
     [app.dispatch :refer [dispatch]]
-    [app.editors :refer [editable-text cm-editor]]
+    [app.editors :refer [editable-text]]
+    [cljs-cm-editor.core :refer [cm-editor]]
     [app.keys :as keys]
-    [app.state :as state :refer [user doc cell]]
+    [app.state :as state :refer [user doc options sample grammar]]
     [reagent.core :as r :refer [cursor]]
     [re-com.core :refer [h-box v-box box gap line scroller border h-split v-split title flex-child-style p]]
     [re-com.splits :refer [hv-split-args-desc]]
@@ -45,9 +46,9 @@
      {:id    "parsed-output"
       :style {:overflow-y "auto" :marginTop 30 :width "100%"}}
      @state/output
-     [:div {:style {:white-space "pre-wrap"}} (with-out-str (pprint @state/cells))]]))
+     ]))
 
-(defn options []
+(defn option-view []
   (let [show-options (r/atom false)
         toggle-show-options (fn [] (reset! show-options (not @show-options)))]
     (r/create-class {
@@ -56,19 +57,21 @@
                      :render                 (fn []
                                                [:div {:class-name "options"}
                                                 [:div
-                                                 {:class-name    "button"
-                                                  :style    {:text-align "center"}
-                                                  :on-click toggle-show-options}
+                                                 {:class-name "button"
+                                                  :style      {:text-align "center"}
+                                                  :on-click   toggle-show-options}
                                                  "Options"]
                                                 (if @show-options
-                                                  [:div [cm-editor (cell :options) {:mode "clojure" :style "background:white"}]])])})))
+                                                  [:div [cm-editor options {:mode "clojure" :style "background:white"}]])])})))
 
-(defn description []
-  (fn []
-    (let [owner (= (:owner @state/doc) (:uid @state/user))]
+(defn description [doc]
+  (fn [doc]
+
+    (let [{:keys [username title]} @doc
+          is-owner (= (:owner @state/doc) (:uid @state/user))]
       [:div {:style {:margin "15px 10%" :overflow-y "auto"}}
-       [:a {:href (str "https://www.github.com/" (:username @state/doc))} (:username @state/doc)]
-       (if (and (:username @state/doc) (or owner (:title @state/doc))) " / ")
+       [:a {:href (str "https://www.github.com/" username)} username]
+       (if (and username (or is-owner title)) " / ")
        [:strong [editable-text (cursor state/doc [:title] ) {:empty-text "title"
                                                               :input      {:style {:width "350px"}}}]]
        [editable-text (cursor state/doc [:description] ) {:empty-text "description"
@@ -86,24 +89,24 @@
    :panel-1
    [v-box
     :width "100%"
-    :children [[description]
+    :children [[description state/doc]
                [v-split
                 :margin "0 10% 20px"
                 :initial-split "25"
                 :panel-1 [:div
                           {:style {:border "1px solid #C2C2C1" :flex 1 :display "flex"}}
-                          [cm-editor (cell :sample) {:theme "solarized light"}]]
-                :panel-2 [parsed-output]
-                ]]]
+                          [cm-editor sample {:theme "solarized light"}]]
+                :panel-2 [parsed-output]]]]
    :panel-2 [v-box
              :size "1"
              :style {:position "relative"}
-             :children [[cm-editor (cell :grammar) {:mode "ebnf"}]
-                        [options]]]])
+             :children [[cm-editor grammar {:mode "ebnf"}]
+                        [option-view]]]])
 
 
 (defn app []
   [v-box
    :height "100%"
+   :style {:flex 1}
    :children [[header]
               [editor]]])

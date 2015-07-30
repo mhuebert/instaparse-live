@@ -9,6 +9,7 @@
                            [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                            [com.lucasbradstreet/instaparse-cljs "1.4.1.0-SNAPSHOT"]
                            [secretary "1.2.3"]
+                           [cljs-cm-editor "0.1.1-SNAPSHOT"]
                            [reagent "0.5.0"]
                            [cljsjs/markdown "0.6.0-beta1-0"]
                            [re-com "0.5.4"]

@@ -90,6 +90,9 @@
 (defn get-doc [id]
   (go? (<? (get-in-ref [:docs id]))))
 
+(defn start-load []
+  (swap! state/db assoc :cells data/cells-loading))
+
 (defn get-version
   ([doc-id]
    (go?
@@ -100,16 +103,15 @@
    (go? (<? (get-in-ref [:versions doc-id version-id])))))
 
 (defn view-doc [doc-id]
-  (if (not= doc-id (:id @state/doc))
-    (do (reset! state/cells data/cells-loading)
-        (reset! state/doc data/doc-loading)))
-  (go (reset! state/doc (<! (get-doc doc-id))))
-  (go (reset! state/cells (<! (get-version doc-id)))))
+  (start-load)
+  (go (swap! state/db assoc :doc (<! (get-doc doc-id))))
+  (go (swap! state/db assoc :cells (<! (get-version doc-id)))))
 
 (defn view-doc-version [doc-id version-id]
-  (go (reset! state/doc (<! (get-doc doc-id))))
-  (go (reset! state/cells (<! (get-version doc-id version-id)))))
+  (start-load)
+  (go (swap! state/db assoc :doc (<! (get-doc doc-id))))
+  (go (swap! state/db assoc :cells (<! (get-version doc-id version-id)))))
 
-(defn show-sample []
+(defn view-sample []
   (swap! state/db merge {:doc   data/doc-sample
                          :cells data/cells-sample}))
