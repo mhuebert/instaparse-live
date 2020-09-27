@@ -23,7 +23,7 @@
 
 (defn dispatch-route
   ([] (dispatch-route (-> js/window .-location .-hash)))
-  ([e]
+  ([^js e]
    (cond
      (string? e) (secretary/dispatch! e)
      (.-isNavigation e) (secretary/dispatch! (.-token e)))))
@@ -34,6 +34,4 @@
   (dispatch-route)
   (.setEnabled state/history true)
   (dispatch [:sign-in-anon]))
-
-(defonce _ (init))
 

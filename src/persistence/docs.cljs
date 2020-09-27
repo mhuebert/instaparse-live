@@ -7,7 +7,6 @@
             [matchbox.core :as m]
             [matchbox.async :as ma]
             [cljs.core.async :refer [<! put! chan]]
-            [cljsjs.firebase]
             [app.state :as state :refer [user ui cells]]
             [app.util]
             [app.data :as data]))

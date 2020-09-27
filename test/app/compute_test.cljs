@@ -1,6 +1,7 @@
 (ns app.compute_test
   (:require [cemerick.cljs.test :refer-macros [is are deftest testing use-fixtures done]]
             [reagent.core :as reagent :refer [atom]]
+            [reagent.dom :as rdom]
             [app.compute :as compute]))
 
 (deftest test-vec->element
@@ -27,7 +28,7 @@
 (defn with-mounted-component [comp f]
   (when isClient
     (let [div (add-test-div "_testreagent")]
-      (let [comp (reagent/render-component comp div #(f comp div))]
+      (let [comp (rdom/render comp div #(f comp div))]
         (reagent/unmount-component-at-node div)
         (reagent/flush)
         (.removeChild (.-body js/document) div)))))

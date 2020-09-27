@@ -1,0 +1,6 @@
+{:deps true
+ :dev-http {8000 "resources/public"}
+ :builds {:app {:target :browser
+                :modules {:app {:init-fn app.core/init}}
+                :asset-path "/js/compiled"
+                :output-dir "resources/public/js/compiled"}}}

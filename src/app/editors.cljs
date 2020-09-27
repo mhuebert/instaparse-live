@@ -2,7 +2,9 @@
   (:require [reagent.core :as r :refer [cursor]]
             [app.state :as state]
             [app.dispatch :refer [dispatch]]
-            [cljsjs.markdown]))
+            [cljsjs.markdown]
+            ["/codemirror.js" :as CM]
+            ["/codemirror-ebnf.js"]))
 
 (defn editable-text
   ([a] (editable-text a {}))
@@ -58,22 +60,23 @@
 
      (r/create-class
        {
-        :component-did-mount    #(let [node (.getDOMNode %)
-                                       config (clj->js (merge cm-defaults options))
-                                       editor (.fromTextArea js/CodeMirror node config)
-                                       val (or @a "")
-                                       id (or (:name options) (.now js/Date))]
-                                  (swap! ui-editors merge {id %})
-                                  (r/set-state % {:editor editor :id id :a a})
-                                  (.setValue editor val)
-                                  (add-watch a nil (fn [_ _ _ new-state]
-                                                     (if (not= new-state (.getValue editor))
-                                                       (.setValue editor (or new-state "")))))
-                                  (.on editor "change" (fn [_]
-                                                         (if (:auto-update @state/options)
-                                                           (let [value (.getValue editor)]
-                                                             (reset! a value)))))
-                                  (.on editor "focus" (fn [_] (reset! ui-editor-focus id))))
+        :component-did-mount (fn [^js component]
+                               (let [node (.getDOMNode component)
+                                     config (clj->js (merge cm-defaults options))
+                                     editor (.fromTextArea CM node config)
+                                     val (or @a "")
+                                     id (or (:name options) (.now js/Date))]
+                                 (swap! ui-editors merge {id component})
+                                 (r/set-state component {:editor editor :id id :a a})
+                                 (.setValue editor val)
+                                 (add-watch a nil (fn [_ _ _ new-state]
+                                                    (if (not= new-state (.getValue editor))
+                                                      (.setValue editor (or new-state "")))))
+                                 (.on editor "change" (fn [_]
+                                                        (if (:auto-update @state/options)
+                                                          (let [value (.getValue editor)]
+                                                            (reset! a value)))))
+                                 (.on editor "focus" (fn [_] (reset! ui-editor-focus id)))))
 
         :component-will-unmount (fn [x]
                                   (let [{:keys [id editor]} (r/state x)]
@@ -81,8 +84,8 @@
                                     (.off editor)))
 
 
-        :display-name           "CodeMirror Component"
-        :render                 (fn []
-                                  [:textarea {:style {:width "100%" :height "100%" :display "flex" :background "red" :flex 1}}])
+        :display-name "CodeMirror Component"
+        :render (fn []
+                  [:textarea {:style {:width "100%" :height "100%" :display "flex" :background "red" :flex 1}}])
         }))))
 

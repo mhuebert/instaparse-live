@@ -15,3 +15,6 @@ pom.xml
 .idea
 *.iml
 resources/public
+node_modules
+.shadow-cljs
+resources/public/js/compiled

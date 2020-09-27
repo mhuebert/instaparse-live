@@ -2,7 +2,7 @@
   (:require
     [app.dispatch :refer [dispatch]]
     [app.editors :refer [editable-text]]
-    [cljs-cm-editor.core :refer [cm-editor]]
+    [app.cljs-cm-editor :refer [cm-editor]]
     [app.keys :as keys]
     [app.state :as state :refer [user doc options sample grammar]]
     [reagent.core :as r :refer [cursor]]

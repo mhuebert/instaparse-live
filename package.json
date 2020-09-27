@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "firebase": "^7.21.1",
+    "markdown": "^0.5.0",
+    "react": "^17.0.0-rc.2",
+    "react-dom": "^17.0.0-rc.2",
+    "shadow-cljs": "^2.11.4"
+  }
+}
