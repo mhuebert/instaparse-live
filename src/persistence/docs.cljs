@@ -2,10 +2,10 @@
   (:require-macros
     [cljs.core.async.macros :refer [go]]
     [app.macros :refer [<? go?]])
-  (:require [persistence.core :refer [ref get-in-ref]]
+  (:require [persistence.core :refer [get-in-ref]]
             [persistence.auth :as auth]
-            [matchbox.core :as m]
-            [matchbox.async :as ma]
+            [matchbox2.core :as m]
+            [matchbox2.async :as ma]
             [cljs.core.async :refer [<! put! chan]]
             [app.state :as state :refer [user ui cells]]
             [app.util]
@@ -16,7 +16,7 @@
 ; - review security rules
 
 (defn next-version-id [doc-id]
-  (let [counter-ref (m/get-in ref [:counters doc-id])
+  (let [counter-ref (m/get-in [:counters doc-id])
         id-chan (chan)]
     (m/swap! counter-ref #(+ 1 (or % 0))
              :callback (fn [err committed ss]
@@ -26,8 +26,8 @@
 
 
 (defn save-new []
-  (let [doc-ref (.push (m/get-in ref [:docs]))
-        doc-id (.key doc-ref)
+  (let [doc-ref (.push (m/get-in [:docs]))
+        doc-id (.-key doc-ref)
         new-doc (merge @state/doc {:owner    (:uid @user)
                                    :username (get-in @user [:github :username])
                                    :parent   {:doc-id (:id @state/doc) :version-id (:id @cells)}
@@ -37,8 +37,8 @@
       (swap! state/doc merge new-doc))
 
     (go?
-      (let [version-id (<! (next-version-id doc-id))
-            version-ref (m/get-in ref [:versions doc-id version-id])
+      (let [version-id (<? (next-version-id doc-id))
+            version-ref (m/get-in [:versions doc-id version-id])
             version (merge @cells {:id version-id})]
 
         (<? (ma/reset-with-priority!< version-ref version (.now js/Date)))
@@ -47,7 +47,7 @@
 (defn new []
   (reset! state/doc {:title nil :description nil :owner (:uid @state/user) :username (get-in @state/user [:github :username])})
   (reset! state/cells data/cells-sample)
-  (.setToken state/history "/new"))
+  (.setToken ^js state/history "/new"))
 
 (defn fork []
   (if-not (= "Forking..." (:fork-status @ui))
@@ -63,11 +63,11 @@
 
 (defn save-version []
   (go
-    (<? (ma/reset!< (m/get-in ref [:docs (:id @state/doc)]) @state/doc)))
+    (<? (ma/reset!< (m/get-in [:docs (:id @state/doc)]) @state/doc)))
   (go?
     (let [doc-id (:id @state/doc)
           version-id (<? (next-version-id doc-id))
-          version-ref (m/get-in ref [:versions doc-id version-id])
+          version-ref (m/get-in [:versions doc-id version-id])
           version (assoc @cells :id version-id)]
 
       (<? (ma/reset-with-priority!< version-ref version (.now js/Date)))
@@ -84,6 +84,7 @@
           (.setToken state/history (str "/" (:id @state/doc))))
         (catch js/Error e
           (swap! ui merge {:save-status (js/Error "Error saving")})
+          (js/console.error e)
           (prn "save error" e))))))
 
 (defn get-doc [id]

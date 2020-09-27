@@ -1,26 +1,35 @@
 (ns persistence.auth
-  (:require [persistence.core :refer [ref]]
+  (:require ["@firebase/app" :default firebase]
+            ["@firebase/auth" :as auth]
+            [applied-science.js-interop :as j]
+            [matchbox2.core :as m]
+            [persistence.core]
             [app.state :refer [user]]))
 
-(defonce _
-         (do
-           (.onAuth ref
-                    (fn [auth-data]
-                      (js->clj auth-data)
-                      (reset! user (js->clj auth-data :keywordize-keys true))))))
+(def !auth
+  (delay @m/init!
+         (.auth firebase)))
+
+(defn init []
+  (.onAuthStateChanged ^js @!auth
+                       (j/fn [^:js {:as auth-data
+                                    :keys [isAnonymous uid]
+                                    [{:keys [displayName]}] :providerData}]
+                         (if auth-data
+                           (reset! user {:uid uid
+                                         :provider (if isAnonymous "anonymous" "github")
+                                         :display-name displayName})
+                           (j/call @!auth :signInAnonymously)))))
 
 (defn sign-in-anon []
-  (if-not (.getAuth ref) (.authAnonymously ref #())))
+  (j/call @!auth :signInAnonymously))
 
 (defn sign-in-github []
-  (.authWithOAuthPopup ref "github"
-                       (fn [error auth-data]
-                         (if error (prn (js/Error error))
-                                   (prn auth-data)))))
+  (j/call @!auth :signInWithPopup (new (.. firebase -auth -GithubAuthProvider))))
 
 (defn signed-in? []
   (if (:uid @user) true false))
 
 (defn sign-out []
   (reset! user {})
-  (.unauth ref))
+  (j/call @!auth :signOut))

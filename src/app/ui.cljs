@@ -8,7 +8,7 @@
   (doseq [{:keys [editor a]} (map #(-> % last r/state-atom deref) (:editors @state/ui))]
     (let [new-val (.getValue editor)
           old-val @a]
-      (if (not= new-val old-val)
+      (when (not= new-val old-val)
         (.setTimeout js/window #(reset! a new-val) 10)))))
 
 (defn focus-last-editor []

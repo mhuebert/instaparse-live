@@ -32,6 +32,5 @@
   (secretary/set-config! :prefix "#")
   (goog.events/listen state/history EventType/NAVIGATE dispatch-route)
   (dispatch-route)
-  (.setEnabled state/history true)
-  (dispatch [:sign-in-anon]))
+  (.setEnabled state/history true))
 
