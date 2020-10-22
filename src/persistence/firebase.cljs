@@ -1,10 +1,10 @@
-(ns matchbox2.core
+(ns persistence.firebase
   (:refer-clojure :exclude [get-in swap! reset! deref])
   (:require ["@firebase/app" :default firebase]
-            ["@firebase/database"]
-            [clojure.walk :as walk]))
-
-
+            ["@firebase/database" :as db]
+            [clojure.walk :as walk]
+            [applied-science.js-interop :as j]
+            [kitchen-async.promise :as p]))
 
 (defonce init! (delay
                  (.initializeApp firebase
@@ -45,43 +45,26 @@
        (walk/postwalk keywords->strings)
        clj->js))
 
-(defn extract-cb [args]
-  (if (and (>= (count args) 2)
-           (= (first (take-last 2 args)) :callback))
-    [(last args) (drop-last 2 args)]
-    [nil args]))
-
-(defn throw-fb-error [err & [msg]]
-  (throw (ex-info (or msg "FirebaseError") {:err err})))
-
 (defn value
   "Data stored within snapshot"
   [^js snapshot]
   (hydrate (.val snapshot)))
 
-(defn deref [^js  ref cb]
-  (.once ref "value" (comp cb value)))
+(defn once [^js ref]
+  (p/-> (.once ref "value")
+        value))
+
+(extend-protocol IDeref
+  db/Reference
+  (-deref [this] (once this)))
 
 (defn swap! [^js ref f & args]
-  (let [[cb args] (extract-cb args)]
-    (.transaction ref
-                  #(-> % hydrate ((fn [x] (apply f x args))) serialize)
-                  (or cb
-                    js/undefined))))
+  (p/-> (.transaction ref #(-> % hydrate ((fn [x] (apply f x args))) serialize))
+        (j/get :snapshot)
+        value))
 
-(defn reset! [^js ref val & [cb]]
-  (.set ref (serialize val) (if cb
-                              (fn [err]
-                                (if err
-                                  (throw-fb-error err)
-                                  (cb ref)))
-                              js/undefined)))
+(defn reset! [^js ref val]
+  (.set ref (serialize val)))
 
-(defn reset-with-priority! [^js ref val priority & [cb]]
-  (.setWithPriority ref (serialize val) priority
-                    (if cb
-                      (fn [err]
-                        (if err
-                          (throw-fb-error err)
-                          (cb ref)))
-                      js/undefined)))
+(defn reset-with-priority! [^js ref val priority]
+  (.setWithPriority ref (serialize val) priority))

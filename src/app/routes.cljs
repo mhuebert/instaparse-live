@@ -1,25 +1,26 @@
 (ns app.routes
   (:require [app.state :as state]
-            [app.dispatch :refer [dispatch]]
             [goog.events]
             [goog.history.EventType :as EventType]
-            [secretary.core :as secretary :refer-macros [defroute]])
+            [secretary.core :as secretary :refer-macros [defroute]]
+            [persistence.docs :as docs]
+            [app.ui :as ui])
   (:import goog.History))
 
 (defroute "/" []
-          (dispatch [:view-sample]))
+          (docs/view-sample!))
 
 (defroute "/new" []
-          (dispatch [:new!]))
+          (docs/new!))
 
 (defroute "/power" []
-          (dispatch [:enter-power-mode]))
+          (ui/power-mode!))
 
 (defroute doc-path "/:doc-id" [doc-id]
-          (dispatch [:view-doc doc-id]))
+         (docs/view-doc doc-id))
 
 (defroute version-path "/:doc-id/:version-id" [doc-id version-id]
-          (dispatch [:view-doc-version doc-id version-id]))
+          (docs/view-doc doc-id version-id))
 
 (defn dispatch-route
   ([] (dispatch-route (-> js/window .-location .-hash)))

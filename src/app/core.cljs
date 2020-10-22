@@ -1,12 +1,10 @@
-(ns ^:figwheel-always app.core
+(ns app.core
   (:require
     [app.routes :as routes]
-    [app.state :as state]
     [app.layout :as layout]
     [reagent.dom :as rdom]
-    [persistence.auth :as auth]))
-
-(enable-console-print!)
+    [persistence.auth :as auth]
+    [app.keys :as keys]))
 
 (defn ^:dev/after-load render []
   (rdom/render [layout/app] (.getElementById js/document "app")))
@@ -14,5 +12,6 @@
 (defn ^:export init []
   (render)
   (auth/init)
-  (routes/init))
+  (routes/init)
+  (keys/init))
 

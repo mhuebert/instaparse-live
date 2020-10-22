@@ -1,14 +1,15 @@
 (ns app.layout
   (:require
-    [app.dispatch :refer [dispatch]]
     [app.editors :refer [cm-editor editable-text]]
     [app.keys :as keys]
-    [app.state :as state :refer [user doc]]
-    [reagent.core :as r :refer [cursor]]
+    [app.state :as state :refer [user doc cursor]]
+    [reagent.core :as r]
     [re-com.core :refer [h-box v-box box gap line scroller border h-split v-split title flex-child-style p]]
     [re-com.splits :refer [hv-split-args-desc]]
     [fipp.edn :refer [pprint]]
-    ))
+    [persistence.docs :as docs]
+    [persistence.auth :as auth]
+    [app.ui :as ui]))
 
 
 (defn fancy-errors [body]
@@ -18,24 +19,24 @@
   [:div
    {:id "header"}
    [:span {:class-name "left"}
-    [:a {:class-name "button" :on-click #(dispatch [:new!])} "New"]
-    [:a {:class-name "button" :on-click #(dispatch [:fork!])} (fancy-errors (:fork-status @state/ui))]
+    [:a {:class-name "button" :on-click #(docs/new!)} "New"]
+    [:a {:class-name "button" :on-click #(docs/fork!)} (fancy-errors (:fork-status @state/ui))]
     (if (and (:uid @state/user) (= (:owner @state/doc) (:uid @state/user)))
-      [:a {:class-name "button" :on-click #(dispatch [:save!]) :title "CMD-s"}
+      [:a {:class-name "button" :on-click #(docs/save!) :title "CMD-s"}
        (fancy-errors (:save-status @state/ui))])
 
     [:span {:class-name (str "button" (if-not (:id @state/doc) "hidden"))}
      [:strong [:a {:href (str "#/" (:id @state/doc) "/" (:id @state/cells))} (:id @state/cells)]]]
     (if-not (:auto-update @state/options-clj)
       [:span {:class-name "button"
-              :on-click #(dispatch [:refresh-editor-state])
+              :on-click #(state/refresh-editor-state!)
               :style {:background "#0B749F" :font-size "13px" :padding "2px 4px" :color "white"}}
        "refresh (ctrl+r)"])]
 
    [:span {:class-name "right"}
     (condp = (:provider @state/user)
-      "github" [:span (:display-name @user) " — " [:a {:style {:cursor "pointer" :color "#777"} :on-click #(dispatch [:sign-out])} "Log out"]]
-      "anonymous" [:a {:on-click #(dispatch [:sign-in-github]) :style {:cursor "pointer"}} "Sign In with Github"]
+      "github" [:span (:display-name @user) " — " [:a {:style {:cursor "pointer" :color "#777"} :on-click #(auth/sign-out)} "Log out"]]
+      "anonymous" [:a {:on-click #(auth/sign-in-github) :style {:cursor "pointer"}} "Sign In with Github"]
       nil "authenticating...")]])
 
 (defn parsed-output []
@@ -48,7 +49,9 @@
   (let [show-options (r/atom false)
         toggle-show-options (fn [] (reset! show-options (not @show-options)))]
     (r/create-class {
-                     :component-did-mount (fn [] (keys/register "ctrl+o" (fn [] (toggle-show-options) (dispatch [:focus-last-editor]))))
+                     :component-did-mount (fn [] (keys/register "ctrl+o" (fn []
+                                                                           (toggle-show-options)
+                                                                           (ui/focus-last-editor!))))
                      :component-will-unmount (fn [] (keys/unregister "ctrl+o"))
                      :render (fn []
                                [:div {:class-name "options"}
@@ -61,20 +64,20 @@
                                   [:div [cm-editor state/options-txt {:mode "clojure" :style "background:white"}]])])})))
 
 (defn description [doc]
-  (fn [doc]
-
-    (let [{:keys [username title]} @doc
-          is-owner (= (:owner @state/doc) (:uid @state/user))]
-      [:div {:style {:margin "15px 10%" :overflow-y "auto"}}
-       username
-       (if (and username (or is-owner title)) " / ")
-       [:strong [editable-text (cursor state/doc [:title]) {:empty-text "title"
-                                                            :input {:style {:width "350px"}}}]]
-       [editable-text (cursor state/doc [:description]) {:empty-text "description"
-                                                         :edit-text "edit description"
-                                                         :markdown true
-                                                         :only-power-edit true}]
-       ])))
+  (let [!desc (cursor state/doc [:description])
+        !title (cursor state/doc [:title])]
+    (fn [doc]
+      (let [{:keys [username title]} @doc
+            is-owner (= (:owner @state/doc) (:uid @state/user))]
+        [:div {:style {:margin "15px 10%" :overflow-y "auto"}}
+         username
+         (if (and username (or is-owner title)) " / ")
+         [:strong [editable-text !title {:empty-text "title"
+                                         :input {:style {:width "350px"}}}]]
+         [editable-text !desc {:empty-text "description"
+                               :edit-text "edit description"
+                               :markdown true
+                               :only-power-edit true}]]))))
 
 (defn editor []
   [h-split

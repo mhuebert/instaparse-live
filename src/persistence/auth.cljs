@@ -2,12 +2,12 @@
   (:require ["@firebase/app" :default firebase]
             ["@firebase/auth" :as auth]
             [applied-science.js-interop :as j]
-            [matchbox2.core :as m]
-            [persistence.core]
-            [app.state :refer [user]]))
+            [persistence.firebase :as fire]
+            [app.state :refer [user]]
+            [kitchen-async.promise :as p]))
 
 (def !auth
-  (delay @m/init!
+  (delay @fire/init!
          (.auth firebase)))
 
 (defn init []
@@ -16,19 +16,23 @@
                                     :keys [isAnonymous uid]
                                     [{:keys [displayName]}] :providerData}]
                          (if auth-data
-                           (reset! user {:uid uid
-                                         :provider (if isAnonymous "anonymous" "github")
-                                         :display-name displayName})
+                           (p/let []
+                                  (reset! user {:uid uid
+                                                :provider (if isAnonymous "anonymous" "github")
+                                                :display-name displayName}))
                            (j/call @!auth :signInAnonymously)))))
 
 (defn sign-in-anon []
   (j/call @!auth :signInAnonymously))
 
 (defn sign-in-github []
-  (j/call @!auth :signInWithPopup (new (.. firebase -auth -GithubAuthProvider))))
+  (-> @!auth
+      (j/call :signInWithPopup (new (.. firebase -auth -GithubAuthProvider)))
+      (j/call :then #(do (js/console.log (js-arguments)) (swap! user assoc :access-token (j/get-in % [:credential :accessToken]))))
+      (j/call :then prn)))
 
 (defn signed-in? []
-  (if (:uid @user) true false))
+  (boolean (:uid @user)))
 
 (defn sign-out []
   (reset! user {})

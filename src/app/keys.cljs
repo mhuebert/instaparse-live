@@ -1,7 +1,9 @@
 (ns app.keys
-  (:require  [goog.ui.KeyboardShortcutHandler]
-             [goog.events]
-             [app.dispatch :refer [dispatch]]))
+  (:require [goog.ui.KeyboardShortcutHandler]
+            [goog.events]
+            [app.ui :as ui]
+            [app.state :as state]
+            [persistence.docs :as docs]))
 
 (defonce handler (new goog.ui.KeyboardShortcutHandler js/document))
 (defonce actions (atom {}))
@@ -20,10 +22,10 @@
     (.registerShortcut handler label shortcut)
     (swap! actions assoc label func)))
 
-(register "meta+s" #(dispatch [:save!]))
-(register "ctrl+r" #(dispatch [:refresh-editor-state]))
-(register "alt+tab" #(dispatch [:editor-jump]))
+(register "meta+s" #(docs/save!))
+(register "ctrl+r" #(state/refresh-editor-state!))
+(register "alt+tab" #(ui/editor-jump!))
 
-(defonce _
-         (goog.events/listen handler goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED key-event))
+(defn init []
+  (goog.events/listen handler goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED key-event))
 

@@ -1,11 +1,12 @@
 (ns app.editors
-  (:require [reagent.core :as r :refer [cursor]]
-            [app.state :as state]
-            [app.dispatch :refer [dispatch]]
+  (:require [reagent.core :as r]
+            [app.state :as state :refer [cursor]]
             ["markdown" :refer [markdown]]
             ["/codemirror.js" :as CM]
             ["/codemirror-ebnf.js"]
-            [reagent.dom :as rdom]))
+            [reagent.dom :as rdom]
+            [app.ui :as ui]
+            [persistence.docs :as docs]))
 
 (defn editable-text
   ([a] (editable-text a {}))
@@ -19,8 +20,8 @@
          editing (r/atom false)
          toggle-edit (fn []
                        (reset! editing (not @editing))
-                       (dispatch [:focus input-id])
-                       (if-not @editing (dispatch [:save!]))
+                       (ui/focus! input-id)
+                       (if-not @editing (docs/save!))
                        )]
      (fn []
        (let [input-options {:id input-id :on-change handle-change :on-blur toggle-edit :value @a}
@@ -65,14 +66,13 @@
           (let [node (rdom/dom-node component)
                 config (clj->js (merge cm-defaults options))
                 editor (.fromTextArea CM node config)
-                val (str @a)
                 id (or (:name options) (.now js/Date))]
             (swap! ui-editors merge {id component})
             (r/set-state component {:editor editor :id id :a a})
-            (.setValue editor val)
-            (add-watch a nil (fn [_ _ _ new-state]
-                               (if (not= new-state (.getValue editor))
-                                 (.setValue editor (or new-state "")))))
+            (.setValue editor (str @a))
+            (add-watch a :editor (fn [_ _ _ new-state]
+                                   (if (not= new-state (.getValue editor))
+                                     (.setValue editor (or new-state "")))))
             (.on editor "change" (fn [_]
                                    (when (:auto-update @state/options-clj)
                                      (reset! a (.getValue editor)))))
@@ -85,4 +85,3 @@
             (.off editor)))
         :render
         (fn [] [:textarea {:style {:width "100%" :height "100%" :display "flex" :background "red" :flex 1}}])}))))
-

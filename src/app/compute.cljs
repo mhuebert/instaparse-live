@@ -34,11 +34,12 @@
         (rest v)))
 
 (defn- visualized-result [result]
-  (let [result (postwalk
-                 (fn [x]
-                   (if (vector? x) (vec->element x) x))
-                 result)]
-    [:div {:class-name "parse-output"} (interpose [:div {:class-name "parse-sep"}] result)]))
+  (->> result
+       (postwalk
+         (fn [x]
+           (if (vector? x) (vec->element x) x)))
+       (interpose [:div {:class-name "parse-sep"}])
+       (into [:div {:class-name "parse-output"}])))
 
 (defn parse
   ([grammar sample options] (parse {:grammar grammar :sample sample :options options}))
