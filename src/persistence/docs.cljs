@@ -19,10 +19,12 @@
 (defn save-new! []
   (let [doc-ref (.push (fire/get-in [:docs]))
         doc-id (.-key doc-ref)
-        new-doc (merge @state/doc {:owner (:uid @user)
-                                   :username (get-in @user [:github :username])
-                                   :parent {:doc-id (:id @state/doc) :version-id (:id @cells)}
-                                   :id doc-id})]
+        new-doc (merge @state/doc
+                       {:title  (str "Copy of " (:title @state/doc))
+                        :owner (:uid @user)
+                        :username (get-in @user [:github :username])
+                        :parent {:doc-id (:id @state/doc) :version-id (:id @cells)}
+                        :id doc-id})]
     (p/do
       (fire/reset! doc-ref new-doc)
       (swap! state/doc merge new-doc)
@@ -39,13 +41,12 @@
 
 (defn fork! []
   (state/refresh-editor-state!)
-  (if-not (= "Forking..." (:fork-status @ui))
+  (when-not (= "Forking..." (:fork-status @ui))
     (swap! ui merge {:fork-status "Forking..."})
-    (try
-      (p/do
-        (save-new!)
-        (swap! ui merge {:fork-status "Fork"}))
-      (catch js/Error e
+    (p/try
+      (save-new!)
+      (swap! ui merge {:fork-status "Fork"})
+      (p/catch js/Error e
         (prn e)
         (swap! ui merge {:fork-status (js/Error "Error forking")})))))
 

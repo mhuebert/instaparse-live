@@ -6,7 +6,8 @@
             ["/codemirror-ebnf.js"]
             [reagent.dom :as rdom]
             [app.ui :as ui]
-            [persistence.docs :as docs]))
+            [persistence.docs :as docs]
+            [applied-science.js-interop :as j]))
 
 (defn editable-text
   ([a] (editable-text a {}))
@@ -18,32 +19,35 @@
          handle-change (fn [e]
                          (reset! a (.-value (.-target e))))
          editing (r/atom false)
-         toggle-edit (fn []
-                       (reset! editing (not @editing))
-                       (ui/focus! input-id)
-                       (if-not @editing (docs/save!))
-                       )]
+         finish! #(do (reset! editing false) (docs/save!))
+         edit! (fn []
+                 (reset! editing true)
+                 (ui/focus! input-id))]
      (fn []
-       (let [input-options {:id input-id :on-change handle-change :on-blur toggle-edit :value @a}
+       (let [input-options {:id input-id
+                            :on-change handle-change
+                            :on-key-down #(when (= "Enter" (j/get % :key))
+                                            (finish!))
+                            :on-blur finish!
+                            :value @a}
              md (:markdown options)
              owner (= (:uid @state/user) (:owner @state/doc))
              display-opts {:class-name (str (if owner "as-owner"))
-                           :on-click (if owner toggle-edit #())
-                           }]
+                           :on-click (when owner edit!)}]
          [:span
           {:class-name "editable-text"
            :style {:display (if (:markdown options) "block" "inline")}}
-          [:span {:class-name (if @editing "" "hidden")}
+          [:span {:class-name (when-not @editing "hidden")}
            (if (:markdown options)
              [:textarea input-options]
              [:input (merge input-options (:input options))])]
-          [:span { :class-name (if @editing "hidden" "")}
+          [:span {:class-name (if @editing "hidden" "")}
            (if md
              [:div (merge display-opts {:dangerouslySetInnerHTML {:__html (.toHTML markdown (or @a ""))}})]
              [:span display-opts @a])
            (if-not (and (:only-power-edit options) (not (:power @state/ui)))
              (if (and owner (empty? @a))
-               [:span " " [:a {:class-name "text-link" :on-click toggle-edit}
+               [:span " " [:a {:class-name "text-link" :on-click edit!}
                            (:empty-text options)]]))]])))))
 
 (def cm-defaults {
@@ -58,7 +62,7 @@
   ([a] (cm-editor a {}))
   ([a options]
    (let [ui-editors (cursor state/ui [:editors])
-         ui-editor-focus (cursor state/ui [:editor-focus] )]
+         ui-editor-focus (cursor state/ui [:editor-focus])]
 
      (r/create-class
        {:component-did-mount
